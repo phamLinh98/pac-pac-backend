@@ -26,7 +26,7 @@ app.get("/api/list", async (req, res) => {
 
 app.get("/api/story", async (req, res) => {
     try {
-        // Query dữ liệu từ bảng "list"
+        // Query dữ liệu từ bảng story
         const result = await sql`SELECT * FROM story`;
 
         // Trả về dữ liệu dưới dạng JSON
@@ -40,7 +40,7 @@ app.get("/api/story", async (req, res) => {
 
 app.get("/api/comment", async (req, res) => {
     try {
-        // Query dữ liệu từ bảng "list"
+        // Query dữ liệu từ bảng comment
         const result = await sql`SELECT * FROM comment`;
 
         // Trả về dữ liệu dưới dạng JSON
@@ -54,7 +54,7 @@ app.get("/api/comment", async (req, res) => {
 
 app.get("/api/user", async (req, res) => {
     try {
-        // Query dữ liệu từ bảng "list"
+        // Query dữ liệu từ bảng user
         const result = await sql`select * from "public"."user"`;
 
         // Trả về dữ liệu dưới dạng JSON
