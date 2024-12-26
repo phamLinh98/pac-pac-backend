@@ -1,6 +1,7 @@
 import express from "express";
 import { config } from "dotenv";
 import { neon } from "@neondatabase/serverless";
+import cors from "cors"; // Import middleware cors
 
 // Load environment variables
 config();
@@ -8,6 +9,24 @@ config();
 // Tạo instance của Express
 const app = express();
 const sql = neon(process.env.DATABASE_URL);
+
+// Cấu hình CORS cho hai domain cụ thể
+const allowedOrigins = [
+  "https://pac-pac-backend.vercel.app",
+  "http://localhost:5173"
+];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  }
+};
+
+app.use(cors(corsOptions)); // Áp dụng middleware cors
 
 // Định nghĩa API GET /list
 app.get("/list", async (req, res) => {
@@ -65,7 +84,6 @@ app.get("/user", async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
-
 
 // Chạy server trên port 3000
 app.listen(3000, () => {
