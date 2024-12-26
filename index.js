@@ -10,7 +10,7 @@ const app = express();
 const sql = neon(process.env.DATABASE_URL);
 
 // Định nghĩa API GET /list
-app.get("/api/list", async (req, res) => {
+app.get("/list", async (req, res) => {
     try {
         // Query dữ liệu từ bảng "list"
         const result = await sql`SELECT * FROM list`;
@@ -24,7 +24,7 @@ app.get("/api/list", async (req, res) => {
     }
 });
 
-app.get("/api/story", async (req, res) => {
+app.get("/story", async (req, res) => {
     try {
         // Query dữ liệu từ bảng story
         const result = await sql`SELECT * FROM story`;
@@ -38,7 +38,7 @@ app.get("/api/story", async (req, res) => {
     }
 });
 
-app.get("/api/comment", async (req, res) => {
+app.get("/comment", async (req, res) => {
     try {
         // Query dữ liệu từ bảng comment
         const result = await sql`SELECT * FROM comment`;
@@ -52,7 +52,7 @@ app.get("/api/comment", async (req, res) => {
     }
 });
 
-app.get("/api/user", async (req, res) => {
+app.get("/user", async (req, res) => {
     try {
         // Query dữ liệu từ bảng user
         const result = await sql`select * from "public"."user"`;
