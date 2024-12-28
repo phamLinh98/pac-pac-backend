@@ -13,6 +13,7 @@ SELECT
     l.user_id,
     l.content,
     l.comment,
+    l.like,
     l.created_at,
     u.name AS user_name,
     u.avatar AS avatar
