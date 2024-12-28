@@ -6,3 +6,9 @@ export const getComment = async() => {
     const rows = await sql(queryObject);
     return rows;
 }
+
+export const getCommentByListId = async (listId) => {
+    const {query,values} = commentModel.getCommentByListId(listId);
+    const rows = await sql(query,values);
+    return rows;
+}

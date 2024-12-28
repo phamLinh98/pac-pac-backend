@@ -8,7 +8,10 @@ const router = express.Router();
 
 router.get('/list', listController.getList);
 router.get('/story', storyController.getStory);
+
 router.get('/comment', commentController.getComment);
+router.get('/comment/:id', commentController.getCommentByListId);
+
 router.get('/user', userController.getUser);
 
 export default router;
