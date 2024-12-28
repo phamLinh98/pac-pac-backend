@@ -4,11 +4,12 @@ export const getComment = () => {
 }
 
 export const getCommentByListId = (listId) => {
-    const query = `SELECT c.*
+    const query = `SELECT c.*,u.name AS user_name
                    FROM comment c
                    JOIN list l ON c.post_id = l.id
+                   JOIN "public"."user" u ON c.user_id = u.id
                    WHERE l.id = $1` ;
     const values = [listId];
     // const queryObject = {query,values}
-    return {query,values};
+    return { query, values };
 }
