@@ -12,34 +12,6 @@ app.use(corsMiddleware); // Áp dụng middleware cors
 // Định nghĩa API GET /list
 app.use(router);
 
-app.get("/comment", async (req, res) => {
-    try {
-        // Query dữ liệu từ bảng comment
-        const result = await sql(`SELECT * FROM comment`);
-
-        // Trả về dữ liệu dưới dạng JSON
-        res.status(200).json(result);
-    } catch (error) {
-        // Xử lý lỗi nếu có
-        console.error("Error querying the database:", error);
-        res.status(500).json({ error: "Internal Server Error" });
-    }
-});
-
-app.get("/user", async (req, res) => {
-    try {
-        // Query dữ liệu từ bảng user
-        const result = await sql(`SELECT * FROM "public"."user"`);
-
-        // Trả về dữ liệu dưới dạng JSON
-        res.status(200).json(result);
-    } catch (error) {
-        // Xử lý lỗi nếu có
-        console.error("Error querying the database:", error);
-        res.status(500).json({ error: "Internal Server Error" });
-    }
-});
-
 app.get("/comment/:id", async (req, res) => {
     try {
         const listId = req.params.id;
