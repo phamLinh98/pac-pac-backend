@@ -25,7 +25,7 @@ export const getCommentByListId = async (req, res) => {
         const result = await commentService.getCommentByListId(listId);
         // Kiểm tra xem có dữ liệu trả về hay không
         if (!result || result.length === 0) {
-            return res.status(404).json({ message: "No comments found for this list id" });
+            return res.status(200).json([]);
         }
         // Trả về dữ liệu dưới dạng JSON
         res.status(200).json(result);
