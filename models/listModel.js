@@ -22,4 +22,14 @@ FROM
 JOIN
     "public"."user" u ON l.user_id = u.id;`;
     return query;
+};
+
+// After click user profile get all list status of that user
+export const getListStatusOfOneUser = (userId) => {
+    const query = `SELECT l.*,u.namecode,u.name
+                   FROM list l
+                   JOIN "public"."user" u ON l.user_id = u.id
+                   WHERE l.user_id = $1`;
+    const values = [userId];
+    return {query, values};
 }

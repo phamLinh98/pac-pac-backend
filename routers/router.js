@@ -7,8 +7,9 @@ import * as userController from '../controllers/userController.js';
 const router = express.Router();
 
 router.get('/list', listController.getList);
-router.get('/story', storyController.getStory);
+router.get('/list/:id', listController.getListStatusOfOneUser);
 
+router.get('/story', storyController.getStory);
 router.get('/comment', commentController.getComment);
 router.get('/comment/:id', commentController.getCommentByListId);
 

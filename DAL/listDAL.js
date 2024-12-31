@@ -6,3 +6,9 @@ export const getList = async() => {
     const rows = await sql(queryObject);
     return rows;
 }
+
+export const getListStatusOfOneUser = async(userId) => {
+    const {query,values} = listModel.getListStatusOfOneUser(userId);
+    const rows = await sql(query,values);
+    return rows;
+}
