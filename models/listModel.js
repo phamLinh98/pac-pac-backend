@@ -26,7 +26,7 @@ JOIN
 
 // After click user profile get all list status of that user
 export const getListStatusOfOneUser = (userId) => {
-    const query = `SELECT l.*,u.namecode,u.name,u.avatar
+    const query = `SELECT l.*,u.namecode,u.name,u.avatar, u.friends
                    FROM list l
                    JOIN "public"."user" u ON l.user_id = u.id
                    WHERE l.user_id = $1`;
