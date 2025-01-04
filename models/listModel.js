@@ -31,5 +31,32 @@ export const getListStatusOfOneUser = (userId) => {
                    JOIN "public"."user" u ON l.user_id = u.id
                    WHERE l.user_id = $1`;
     const values = [userId];
-    return {query, values};
+    return { query, values };
 }
+
+//If userId exist in user table but not in list table
+export const getListReturnWhenUserIdNotExistInBoth = (userId) => {
+    const query = `SELECT id as user_id, name,namecode, avatar,friends,'{}'::jsonb 
+                   AS content
+                   FROM "public"."user"
+                   WHERE id = $1;`;
+    const values = [userId];
+    return { query, values };
+}
+
+// check userId exist in user and list or not 
+export const checkUserIdExistInListAndUser = (userId) => {
+    const query = `
+        SELECT
+            CASE
+                WHEN EXISTS (SELECT 1 FROM list WHERE user_id = $1) 
+                AND EXISTS (SELECT 1 FROM "public"."user" WHERE id = $1) 
+                THEN 1
+                WHEN NOT EXISTS (SELECT 1 FROM list WHERE user_id = $1) 
+                AND EXISTS (SELECT 1 FROM "public"."user" WHERE id = $1) 
+                THEN 2
+                ELSE 3
+                END AS result`;
+    const values = [userId];
+    return { query, values };
+};
