@@ -3,5 +3,4 @@ export const getStory = () => {
     FROM story l
     JOIN "public"."user" u ON l.user_id = u.id`;
 return query;
-    return query;
 }
