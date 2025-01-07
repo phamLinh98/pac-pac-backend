@@ -42,3 +42,15 @@ export const loginUserByEmailAndPassword = async (req, res) => {
         return res.status(500).json({ error: "Internal Server Error" }); // 500 Internal Server Error
     }
 }
+
+export const logoutAndRemoveAllToken = async (req, res) => {
+    res.clearCookie('accessToken', {
+        httpOnly: true, // Phù hợp với cách cookie được thiết lập
+        signed: true,   // Đảm bảo rằng đây là cookie đã ký
+    });
+    res.clearCookie('refeshToken', {
+        httpOnly: true, // Phù hợp với cách cookie được thiết lập
+        signed: true,   // Đảm bảo rằng đây là cookie đã ký
+    });
+    res.send('Cookie đã được xóa!');
+}
