@@ -6,3 +6,15 @@ export const getUser = async () => {
     const rows = await sql(queryObject);
     return rows;
 }
+
+export const loginUserByEmailAndPassword = async (email, password) => {
+    const { query, values } = userModel.loginUserByEmailAndPassword(email, password);
+    const rows = await sql(query, values);
+    return rows;
+}
+
+export const saveRefeshToken = async (userId, token) => {
+   const {query, values} = userModel.saveRefeshToken(userId, token);
+   const rows = await sql(query, values);
+   return rows;
+}

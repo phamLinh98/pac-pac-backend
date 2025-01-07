@@ -14,5 +14,6 @@ router.get('/comment', commentController.getComment);
 router.get('/comment/:id', commentController.getCommentByListId);
 
 router.get('/user', userController.getUser);
+router.post('/login', userController.loginUserByEmailAndPassword);
 
 export default router;
