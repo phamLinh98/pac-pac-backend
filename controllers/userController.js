@@ -24,16 +24,21 @@ export const loginUserByEmailAndPassword = async (req, res) => {
 
         if (result) {
             res.cookie('accessToken', result.accessToken, {
-                maxAge: 15000,
-                httpOnly: true, // Cookie chỉ truy cập được bởi server
-                signed: true,   // Ký cookie
+                maxAge: 15 * 60 * 1000,  // 15 phút cho accessToken
+                httpOnly: true,
+                signed: true,
+                sameSite: 'None', // Để sử dụng cookie ở môi trường khác domain
+                secure: true // Chỉ gửi cookie qua HTTPS
+
             });
             res.cookie('refeshToken', result.refeshToken, {
-                maxAge: 1500000,
-                httpOnly: true, // Cookie chỉ truy cập được bởi server
-                signed: true,   // Ký cookie
+                maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày cho refresh token
+                httpOnly: true,
+                signed: true,
+                sameSite: 'None',
+                secure: true
             });
-            res.send('JWT đã được lưu vào cookie!');
+            return res.status(200).json({ message: 'Login successful' });
         } else {
             return res.status(401).json({ error: "Invalid email or password" }); // 401 Unauthorized
         }
