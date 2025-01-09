@@ -36,7 +36,7 @@ export const loginUserByEmailAndPassword = async (req, res) => {
             secure:  false // Chỉ gửi cookie qua HTTPS
 
         });
-        
+
         res.cookie('refreshToken', result.refreshToken, {
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày cho refresh token
             httpOnly: true,
