@@ -28,10 +28,12 @@ export const loginUserByEmailAndPassword = async (req, res) => {
             return res.status(402).json({ error: "Invalid email or password" }); // 402 Unauthorized
         }
 
+        console.log('result', result);
+
         res.cookie('accessToken', result.accessToken, {
             maxAge: 60 * 60 * 1000,  // 1h cho accessToken
             httpOnly: true,
-            signed: true,
+            //signed: true,
             sameSite: 'None', // Để sử dụng cookie ở môi trường khác domain
             secure:  false // Chỉ gửi cookie qua HTTPS
 
@@ -40,7 +42,7 @@ export const loginUserByEmailAndPassword = async (req, res) => {
         res.cookie('refreshToken', result.refreshToken, {
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày cho refresh token
             httpOnly: true,
-            signed: true,
+            //signed: true,
             sameSite: 'None',
             secure: false
         });
