@@ -12,12 +12,12 @@ export const loginUserByEmailAndPassword = async (email, password) => {
         const rows = await userDAL.loginUserByEmailAndPassword(email, password);
         const userLogin = rows[0];
         const accessToken = signAccessToken(userLogin, envConfig.accessSecretKey, { expiresIn: '1h' })
-        const refeshToken = signRefeshToken(userLogin, envConfig.refeshSecretKey,{ expiresIn: '7day' })
-        await userDAL.saveRefeshToken(userLogin.id, refeshToken);
+        const refreshToken = signRefeshToken(userLogin, envConfig.refeshSecretKey,{ expiresIn: '7day' })
+        await userDAL.saveRefeshToken(userLogin.id, refreshToken);
         return {
             userLogin,
             accessToken,
-            refeshToken
+            refreshToken
         }
     } catch (error) {
         console.log('Khong tim thay user', error);
