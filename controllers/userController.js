@@ -28,19 +28,22 @@ export const loginUserByEmailAndPassword = async (req, res) => {
             return res.status(402).json({ error: "Invalid email or password" }); // 402 Unauthorized
         }
 
-        res.cookie('accessToken', result.accessToken, {
-            maxAge: 60 * 60 * 1000,
+        res.cookie('accessToken', accessToken, {
+            maxAge: 60 * 60 * 1000,  // 1h
             httpOnly: true,
+            signed: true,
             sameSite: 'None',
-            secure: true
+            secure: process.env.NODE_ENV === 'production',
         });
 
-        res.cookie('refreshToken', result.refreshToken, {
-            maxAge: 7 * 24 * 60 * 60 * 1000,
+        res.cookie('refreshToken', refreshToken, {
+            maxAge: 7 * 24 * 60 * 60 * 1000,  // 7d
             httpOnly: true,
+            signed: true,
             sameSite: 'None',
-            secure: true
+            secure: process.env.NODE_ENV === 'production',
         });
+
         return res.status(200).json({ message: 'Login successful' });
 
     } catch (error) {
@@ -71,11 +74,11 @@ export const refreshTokenWhenExpired = async (req, res) => {
 
             // Lưu accessToken mới vào cookie
             res.cookie('accessToken', newAccessToken, {
-                maxAge: 60 * 60 * 1000,  // 1h cho accessToken
+                maxAge: 60 * 60 * 1000,  // 1h
                 httpOnly: true,
                 signed: true,
-                sameSite: 'None', // Để sử dụng cookie ở môi trường khác domain
-                secure: true // Chỉ gửi cookie qua HTTPS
+                sameSite: 'None',
+                secure: process.env.NODE_ENV === 'production',
             });
 
             // Trả về thành công
@@ -93,12 +96,16 @@ export const refreshTokenWhenExpired = async (req, res) => {
 // Logout
 export const logoutAndRemoveAllToken = async (req, res) => {
     res.clearCookie('accessToken', {
-        httpOnly: true, // Phù hợp với cách cookie được thiết lập
-        signed: true,   // Đảm bảo rằng đây là cookie đã ký
+        httpOnly: true,
+        signed: true,
+        sameSite: 'None',
+        secure: process.env.NODE_ENV === 'production',
     });
     res.clearCookie('refreshToken', {
-        httpOnly: true, // Phù hợp với cách cookie được thiết lập
-        signed: true,   // Đảm bảo rằng đây là cookie đã ký
-    });
+        httpOnly: true,
+        signed: true,
+        sameSite: 'None',
+        secure: process.env.NODE_ENV === 'production',
+    });    
     res.send('Cookie đã được xóa!');
 }

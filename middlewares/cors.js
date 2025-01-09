@@ -14,7 +14,7 @@ const corsOptions = {
             callback(new Error("Not allowed by CORS"));
         }
     },
-    credentials: true
+    credentials: 'include'
 };
 
 const corsMiddleware = cors(corsOptions);
