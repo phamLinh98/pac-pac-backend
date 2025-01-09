@@ -28,23 +28,18 @@ export const loginUserByEmailAndPassword = async (req, res) => {
             return res.status(402).json({ error: "Invalid email or password" }); // 402 Unauthorized
         }
 
-        console.log('result', result);
-
         res.cookie('accessToken', result.accessToken, {
-            maxAge: 60 * 60 * 1000,  // 1h cho accessToken
+            maxAge: 60 * 60 * 1000,
             httpOnly: true,
-            //signed: true,
-            sameSite: 'None', // Để sử dụng cookie ở môi trường khác domain
-            secure:  false // Chỉ gửi cookie qua HTTPS
-
+            sameSite: 'None',
+            secure: true
         });
 
         res.cookie('refreshToken', result.refreshToken, {
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày cho refresh token
+            maxAge: 7 * 24 * 60 * 60 * 1000,
             httpOnly: true,
-            //signed: true,
             sameSite: 'None',
-            secure: false
+            secure: true
         });
         return res.status(200).json({ message: 'Login successful' });
 
@@ -67,11 +62,11 @@ export const refreshTokenWhenExpired = async (req, res) => {
                 return res.status(403).json({ message: 'Refresh token không hợp lệ' });
             }
             // TODO2: Cấp phát accessToken mới
-            const {id, name, email, avatar, namecode, friends, iat} = decoded
+            const { id, name, email, avatar, namecode, friends, iat } = decoded
             const newAccessToken = jwt.sign(
-                {id, name, email, avatar, namecode, friends, iat},
+                { id, name, email, avatar, namecode, friends, iat },
                 envConfig.accessSecretKey,
-                {expiresIn: '1h'} // Access token có thời gian sống 1h
+                { expiresIn: '1h' } // Access token có thời gian sống 1h
             );
 
             // Lưu accessToken mới vào cookie
