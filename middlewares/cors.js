@@ -2,6 +2,7 @@ import cors from "cors";
 
 const allowedOrigins = [
     "https://pac-pac-backend.vercel.app",
+    "http://localhost:5173/login",
     "http://localhost:5173",
     "http://localhost:3000"
 ];
