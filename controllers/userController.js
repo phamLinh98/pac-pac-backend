@@ -31,7 +31,7 @@ export const loginUserByEmailAndPassword = async (req, res) => {
         res.cookie('accessToken', result.accessToken, {
             maxAge: 60 * 60 * 1000,  // 1h
             httpOnly: false, // chan js truy cap cookie, chi http moi duoc doc cookie
-            signed: true,
+            //signed: true,
             sameSite: 'None',
             secure: false // chi cho phep https doc cookie
         });
@@ -39,7 +39,7 @@ export const loginUserByEmailAndPassword = async (req, res) => {
         res.cookie('refreshToken', result.refreshToken, {
             maxAge: 7 * 24 * 60 * 60 * 1000,  // 7d
             httpOnly: false, // chan js truy cap cookie, chi http moi duoc doc cookie
-            signed: true,
+            //signed: true,
             sameSite: 'None',
             secure: false // chi cho phep https doc cookie
         });
@@ -75,10 +75,10 @@ export const refreshTokenWhenExpired = async (req, res) => {
             // Lưu accessToken mới vào cookie
             res.cookie('accessToken', newAccessToken, {
                 maxAge: 60 * 60 * 1000,  // 1h
-                httpOnly: true,
+                httpOnly: false,
                 //signed: true,
                 sameSite: 'None',
-                secure: true
+                secure: false
             });
 
             // Trả về thành công
@@ -99,13 +99,13 @@ export const logoutAndRemoveAllToken = async (req, res) => {
         httpOnly: false,
         //signed: true,
         sameSite: 'None',
-        secure: true
+        secure: false
     });
     res.clearCookie('refreshToken', {
         httpOnly: false,
         //signed: true,
         sameSite: 'None',
-        secure: true
+        secure: false
     });    
     res.send('Cookie đã được xóa!');
 }
