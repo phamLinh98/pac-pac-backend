@@ -28,20 +28,20 @@ export const loginUserByEmailAndPassword = async (req, res) => {
             return res.status(402).json({ error: "Invalid email or password" }); // 402 Unauthorized
         }
 
-        res.cookie('accessToken', accessToken, {
+        res.cookie('accessToken', result.accessToken, {
             maxAge: 60 * 60 * 1000,  // 1h
             httpOnly: true,
             signed: true,
-            sameSite: 'None',
-            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Lax',
+            secure: false
         });
 
-        res.cookie('refreshToken', refreshToken, {
+        res.cookie('refreshToken', result.refreshToken, {
             maxAge: 7 * 24 * 60 * 60 * 1000,  // 7d
             httpOnly: true,
             signed: true,
-            sameSite: 'None',
-            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Lax',
+            secure: false
         });
 
         return res.status(200).json({ message: 'Login successful' });
@@ -78,7 +78,7 @@ export const refreshTokenWhenExpired = async (req, res) => {
                 httpOnly: true,
                 signed: true,
                 sameSite: 'None',
-                secure: process.env.NODE_ENV === 'production',
+                secure: true
             });
 
             // Trả về thành công
@@ -99,13 +99,13 @@ export const logoutAndRemoveAllToken = async (req, res) => {
         httpOnly: true,
         signed: true,
         sameSite: 'None',
-        secure: process.env.NODE_ENV === 'production',
+        secure: true
     });
     res.clearCookie('refreshToken', {
         httpOnly: true,
         signed: true,
         sameSite: 'None',
-        secure: process.env.NODE_ENV === 'production',
+        secure: true
     });    
     res.send('Cookie đã được xóa!');
 }
