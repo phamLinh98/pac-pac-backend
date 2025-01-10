@@ -76,7 +76,7 @@ export const refreshTokenWhenExpired = async (req, res) => {
             res.cookie('accessToken', newAccessToken, {
                 maxAge: 60 * 60 * 1000,  // 1h
                 httpOnly: true,
-                signed: true,
+                //signed: true,
                 sameSite: 'None',
                 secure: true
             });
@@ -96,14 +96,14 @@ export const refreshTokenWhenExpired = async (req, res) => {
 // Logout
 export const logoutAndRemoveAllToken = async (req, res) => {
     res.clearCookie('accessToken', {
-        httpOnly: true,
-        signed: true,
+        httpOnly: false,
+        //signed: true,
         sameSite: 'None',
         secure: true
     });
     res.clearCookie('refreshToken', {
-        httpOnly: true,
-        signed: true,
+        httpOnly: false,
+        //signed: true,
         sameSite: 'None',
         secure: true
     });    
