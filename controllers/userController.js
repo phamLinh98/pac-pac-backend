@@ -32,16 +32,16 @@ export const loginUserByEmailAndPassword = async (req, res) => {
             maxAge: 60 * 60 * 1000,  // 1h
             httpOnly: true,
             signed: true,
-            sameSite: 'Lax',
-            secure: false
+            sameSite: 'None',
+            secure: true
         });
 
         res.cookie('refreshToken', result.refreshToken, {
             maxAge: 7 * 24 * 60 * 60 * 1000,  // 7d
             httpOnly: true,
             signed: true,
-            sameSite: 'Lax',
-            secure: false
+            sameSite: 'None',
+            secure: true
         });
 
         return res.status(200).json({ message: 'Login successful' });
