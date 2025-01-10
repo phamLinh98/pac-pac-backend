@@ -31,7 +31,7 @@ export const loginUserByEmailAndPassword = async (req, res) => {
         res.cookie('accessToken', result.accessToken, {
             maxAge: 60 * 60 * 1000,  // 1h
             httpOnly: true,
-            //signed: true,
+            signed: true,
             sameSite: 'None',
             secure: true
         });
@@ -39,7 +39,7 @@ export const loginUserByEmailAndPassword = async (req, res) => {
         res.cookie('refreshToken', result.refreshToken, {
             maxAge: 7 * 24 * 60 * 60 * 1000,  // 7d
             httpOnly: true,
-            //signed: true,
+            signed: true,
             sameSite: 'None',
             secure: true
         });
