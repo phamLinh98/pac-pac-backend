@@ -3,12 +3,12 @@ import * as listController from '../controllers/listController.js';
 import * as storyController from '../controllers/storyController.js';
 import * as commentController from '../controllers/commentController.js';
 import * as userController from '../controllers/userController.js';
-// import { checkTokenMiddleware } from '../middlewares/checkTokenNotValid.js';
+import { checkTokenMiddleware } from '../middlewares/checkTokenNotValid.js';
 
 const router = express.Router();
 
-router.get('/list', listController.getList);
-router.get('/list/:id', listController.getListStatusOfOneUser);
+router.get('/list', checkTokenMiddleware,listController.getList);
+router.get('/list/:id', checkTokenMiddleware, listController.getListStatusOfOneUser);
 
 router.get('/story', storyController.getStory);
 router.get('/comment', commentController.getComment);
