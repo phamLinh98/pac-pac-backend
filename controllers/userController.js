@@ -32,7 +32,7 @@ export const loginUserByEmailAndPassword = async (req, res) => {
             maxAge: 60 * 60 * 1000,  // 1h
             httpOnly: false, // chan js truy cap cookie, chi http moi duoc doc cookie
             signed: true,
-            sameSite: 'Lax',
+            sameSite: 'None',
             secure: false // chi cho phep https doc cookie
         });
 
@@ -40,7 +40,7 @@ export const loginUserByEmailAndPassword = async (req, res) => {
             maxAge: 7 * 24 * 60 * 60 * 1000,  // 7d
             httpOnly: false, // chan js truy cap cookie, chi http moi duoc doc cookie
             signed: true,
-            sameSite: 'Lax',
+            sameSite: 'None',
             secure: false // chi cho phep https doc cookie
         });
 
@@ -106,6 +106,6 @@ export const logoutAndRemoveAllToken = async (req, res) => {
         //signed: true,
         sameSite: 'Lax',
         secure: false
-    });    
+    });
     res.send('Cookie đã được xóa!');
 }
