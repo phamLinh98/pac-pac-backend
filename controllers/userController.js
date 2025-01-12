@@ -30,18 +30,18 @@ export const loginUserByEmailAndPassword = async (req, res) => {
 
         res.cookie('accessToken', result.accessToken, {
             maxAge: 60 * 60 * 1000,  // 1h
-            httpOnly: false, // chan js truy cap cookie, chi http moi duoc doc cookie
-            signed: true,
-            sameSite: 'None',
-            secure: false // chi cho phep https doc cookie
+            httpOnly: true, // chan js truy cap cookie, chi http moi duoc doc cookie
+            //signed: true,
+            sameSite: 'strict',
+            secure: true // chi cho phep https doc cookie
         });
 
         res.cookie('refreshToken', result.refreshToken, {
             maxAge: 7 * 24 * 60 * 60 * 1000,  // 7d
-            httpOnly: false, // chan js truy cap cookie, chi http moi duoc doc cookie
-            signed: true,
-            sameSite: 'None',
-            secure: false // chi cho phep https doc cookie
+            httpOnly: true, // chan js truy cap cookie, chi http moi duoc doc cookie
+            //signed: true,
+            sameSite: 'strict',
+            secure: true // chi cho phep https doc cookie
         });
 
         return res.status(200).json({ message: 'Login successful' });
