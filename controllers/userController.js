@@ -30,17 +30,17 @@ export const loginUserByEmailAndPassword = async (req, res) => {
 
         res.cookie('accessToken', result.accessToken, {
             maxAge: 60 * 60 * 1000,  // 1h
-            httpOnly: true, // chan js truy cap cookie, chi http moi duoc doc cookie
-            //signed: true,
-            sameSite: 'strict',
+            httpOnly: false, // chan js truy cap cookie, chi http moi duoc doc cookie
+            signed: true,
+            sameSite: 'None',
             secure: true // chi cho phep https doc cookie
         });
 
         res.cookie('refreshToken', result.refreshToken, {
             maxAge: 7 * 24 * 60 * 60 * 1000,  // 7d
-            httpOnly: true, // chan js truy cap cookie, chi http moi duoc doc cookie
-            //signed: true,
-            sameSite: 'strict',
+            httpOnly: false, // chan js truy cap cookie, chi http moi duoc doc cookie
+            signed: true,
+            sameSite: 'None',
             secure: true // chi cho phep https doc cookie
         });
 
