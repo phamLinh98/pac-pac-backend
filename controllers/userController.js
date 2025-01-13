@@ -44,7 +44,8 @@ export const loginUserByEmailAndPassword = async (req, res) => {
             secure: true // chi cho phep https doc cookie
         });
 
-        return res.status(200).json({ message: 'Login successful' });
+
+        return res.status(200).json({ message: 'Login successful', token: result.tokenForClient });
 
     } catch (error) {
         console.error("Error during login:", error);
