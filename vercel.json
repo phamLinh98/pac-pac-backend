@@ -9,10 +9,7 @@
   "routes": [
     {
       "src": "/(.*)",
-      "headers": {
-        "Access-Control-Allow-Origin": "http://localhost:5173",
-        "Access-Control-Allow-Credentials": "true"
-      }
+      "dest": "index.js"
     }
   ]
 }
