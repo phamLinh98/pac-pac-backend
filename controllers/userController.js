@@ -30,18 +30,20 @@ export const loginUserByEmailAndPassword = async (req, res) => {
 
         res.cookie('accessToken', result.accessToken, {
             maxAge: 60 * 60 * 1000,  // 1h
-            httpOnly: false, // chan js truy cap cookie, chi http moi duoc doc cookie
+            httpOnly: true,
             signed: true,
-            sameSite: 'None',
-            secure: true // chi cho phep https doc cookie
+            path: '/',
+            sameSite: 'none',
+            secure: true // Important when using sameSite: 'none'
         });
 
         res.cookie('refreshToken', result.refreshToken, {
             maxAge: 7 * 24 * 60 * 60 * 1000,  // 7d
-            httpOnly: false, // chan js truy cap cookie, chi http moi duoc doc cookie
+            httpOnly: true,
             signed: true,
-            sameSite: 'None',
-            secure: true // chi cho phep https doc cookie
+            path: '/',
+            sameSite: 'none',
+            secure: true // Important when using sameSite: 'none'
         });
 
 
@@ -76,10 +78,11 @@ export const refreshTokenWhenExpired = async (req, res) => {
             // Lưu accessToken mới vào cookie
             res.cookie('accessToken', newAccessToken, {
                 maxAge: 60 * 60 * 1000,  // 1h
-                httpOnly: false,
-                //signed: true,
-                sameSite: 'Lax',
-                secure: false
+                httpOnly: true,
+                signed: true,
+                path: '/',
+                sameSite: 'none',
+                secure: true // Important when using sameSite: 'none'
             });
 
             // Trả về thành công
@@ -97,16 +100,18 @@ export const refreshTokenWhenExpired = async (req, res) => {
 // Logout
 export const logoutAndRemoveAllToken = async (req, res) => {
     res.clearCookie('accessToken', {
-        httpOnly: false,
-        //signed: true,
-        sameSite: 'Lax',
-        secure: false
+        httpOnly: true,
+        signed: true,
+        path: '/',
+        sameSite: 'none',
+        secure: true // Important when using sameSite: 'none'
     });
     res.clearCookie('refreshToken', {
-        httpOnly: false,
-        //signed: true,
-        sameSite: 'Lax',
-        secure: false
+        httpOnly: true,
+        signed: true,
+        path: '/',
+        sameSite: 'none',
+        secure: true // Important when using sameSite: 'none'
     });
     res.send('Cookie đã được xóa!');
 }

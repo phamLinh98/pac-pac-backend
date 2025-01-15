@@ -1,6 +1,7 @@
 // tokenMiddleware.js
 export const checkTokenMiddleware = (req, res, next) => {
-  const accessToken = req.cookies.accessToken;
+  const accessToken = req.signedCookies ? req.signedCookies.accessToken : undefined;
+  console.log('accessToken', req.signedCookies.accessToken);
   if (!accessToken) {
     return res.status(404).json({ error: "AccessToken không tồn tại, quyền truy cập bị từ chối" });
   }
