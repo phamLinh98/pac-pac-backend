@@ -7,13 +7,9 @@ import { envConfig } from "./configs/envConfig.js";
 // Tạo instance của Express
 const app = express();
 
-app.use(express.json());
-
 app.use(corsMiddleware); // Áp dụng middleware cors
-
+app.use(express.json());
 app.use(cookieParser(envConfig.accessSecretKey));
-
-// Định nghĩa API GET /list
 app.use(router);
 
 // Chạy server trên port 3000
