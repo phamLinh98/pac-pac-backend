@@ -7,6 +7,13 @@ export const getUser = async () => {
     return rows;
 }
 
+export const finUserViaUserId = async(userId) => {
+    const {query, values} = userModel.finUserViaUserId(userId);
+    const rows = await sql(query, values);
+    return rows;
+
+}
+
 export const loginUserByEmailAndPassword = async (email, password) => {
     const { query, values } = userModel.loginUserByEmailAndPassword(email, password);
     const rows = await sql(query, values);

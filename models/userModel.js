@@ -3,6 +3,17 @@ export const getUser = () => {
     return query;
 }
 
+const finUserViaUserId = (userId) => {
+  const query = `
+      SELECT id, name, email, avatar, namecode, friends
+      FROM "public"."user"
+      WHERE id = $1
+      LIMIT 1
+  `;
+  const values = [userId];
+  return { query, values };
+};
+
 export const loginUserByEmailAndPassword = (email, password) => {
     const query = `
             SELECT id, name, email, avatar, namecode, friends

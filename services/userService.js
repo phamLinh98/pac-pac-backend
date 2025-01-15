@@ -7,6 +7,11 @@ export const getUser = async () => {
     return rows;
 }
 
+export const finUserViaUserId = async(userId) => {
+    const rows = await userDAL.finUserViaUserId(userId);
+    return rows;
+}
+
 export const loginUserByEmailAndPassword = async (email, password) => {
     try {
         const rows = await userDAL.loginUserByEmailAndPassword(email, password);

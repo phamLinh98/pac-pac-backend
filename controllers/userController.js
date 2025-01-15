@@ -28,14 +28,14 @@ export const loginUserByEmailAndPassword = async (req, res) => {
             return res.status(402).json({ error: "Invalid email or password" }); // 402 Unauthorized
         }
 
-        res.cookie('accessToken', result.accessToken, {
-            maxAge: 60 * 60 * 1000,  // 1h
-            httpOnly: true,
-            signed: true,
-            path: '/',
-            sameSite: 'none',
-            secure: true // Important when using sameSite: 'none'
-        });
+        // res.cookie('accessToken', result.accessToken, {
+        //     maxAge: 60 * 60 * 1000,  // 1h
+        //     httpOnly: true,
+        //     signed: true,
+        //     path: '/',
+        //     sameSite: 'none',
+        //     secure: true // Important when using sameSite: 'none'
+        // });
 
         res.cookie('refreshToken', result.refreshToken, {
             maxAge: 7 * 24 * 60 * 60 * 1000,  // 7d
