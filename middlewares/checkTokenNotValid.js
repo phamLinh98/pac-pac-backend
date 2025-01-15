@@ -5,5 +5,13 @@ export const checkTokenMiddleware = (req, res, next) => {
   if (!accessToken) {
     return res.status(404).json({ error: "AccessToken không tồn tại, quyền truy cập bị từ chối" });
   }
-  next(); // Nếu có accessToken, cho phép request tiếp tục
+  jwt.verify(accessToken, secretKey, (err, decoded) => {
+    if (err) {
+      console.error('Token không hợp lệ:', err.message);
+      return res.status(403).json({ error: "Token không hợp lệ, quyền truy cập bị từ chối" });
+    }
+    // Nếu token hợp lệ, thêm thông tin user vào req
+    req.user = decoded; // decoded chứa payload từ token
+    next(); // Tiếp tục xử lý request
+  });
 };
