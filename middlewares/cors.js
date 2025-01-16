@@ -11,7 +11,7 @@ const corsOptions = {
       }
     }, 
     credentials: true, // Cần thiết khi sử dụng cookies
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Các phương thức được phép
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Các phương thức được phép
     allowedHeaders: ['Content-Type', 'Authorization', 'Set-Cookie','Origin'], // Headers được phép
 };
 
