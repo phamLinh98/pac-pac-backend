@@ -60,7 +60,7 @@ export const refreshTokenWhenExpired = async (req, res) => {
         // TODO1: Kiểm tra xem refreshToken có trong cookie hay không
         const refreshToken = req.signedCookies.refreshToken;
         if (!refreshToken) {
-            return res.status(404).json({ message: 'Bạn chưa có refeshToken, yêu cầu đăng nhập lại' });
+            return res.status(405).json({ message: 'Bạn chưa có refeshToken, yêu cầu đăng nhập lại' });
         }
         // Xác thực refreshToken và lấy thông tin user
         jwt.verify(refreshToken, envConfig.refeshSecretKey, (err, decoded) => {
