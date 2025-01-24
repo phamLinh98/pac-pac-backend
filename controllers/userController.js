@@ -46,7 +46,6 @@ export const loginUserByEmailAndPassword = async (req, res) => {
             secure: true // Important when using sameSite: 'none'
         });
 
-
         return res.status(200).json({ message: 'Login successful', token: result.tokenForClient });
 
     } catch (error) {
