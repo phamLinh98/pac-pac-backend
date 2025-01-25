@@ -16,6 +16,8 @@ export const checkTokenMiddleware = (req, res, next) => {
 
   const checkAccessToken = jwt.verify(accessToken, envConfig.accessSecretKey);
 
+  req.checkAccessToken = checkAccessToken;
+
   if (checkAccessToken.exp < Math.floor(Date.now() / 1000)); {
     try {
       // TODO1: Kiểm tra xem refreshToken có trong cookie hay không

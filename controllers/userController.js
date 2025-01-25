@@ -70,3 +70,15 @@ export const logoutAndRemoveAllToken = async (req, res) => {
     });
     res.send('Cookie đã được xóa!');
 }
+
+export const refreshTokenWhenExpired = async (req, res) => {
+    try {
+        const refreshToken = req.signedCookies.refreshToken;
+        if (!refreshToken) {
+            return res.status(405).json({ message: 'Bạn chưa có refeshToken, yêu cầu đăng nhập lại' });
+        }
+    } catch (error) {
+        console.error('Error refreshing token:', error);
+        return res.status(500).json({ message: 'Lỗi hệ thống' });
+    }
+};
