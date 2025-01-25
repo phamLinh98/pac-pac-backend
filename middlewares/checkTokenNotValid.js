@@ -1,6 +1,5 @@
 import { envConfig } from "../configs/envConfig.js";
-import jwt, { decode } from 'jsonwebtoken';
-import * as userService from '../services/userService.js';
+import jwt from 'jsonwebtoken';
 
 // tokenMiddleware.js
 export const checkTokenMiddleware = (req, res, next) => {
@@ -11,30 +10,48 @@ export const checkTokenMiddleware = (req, res, next) => {
     return res.status(401).json({ error: "Bạn chưa được cấp quyền truy cập hoặc quyền truy cập bị từ chối" });
   }
 
-  req.userLogin = jwt.verify(accessToken, envConfig.accessSecretKey);
-
-  const now = Date.now() / 1000;
-  // if token is expired then check refresh token
-  if (req.userLogin.exp < now) {
-    const userLogin = jwt.verify(refreshToken, envConfig.refreshSecretKey);
-    if (!userLogin.id) {
-      return res.status(403).json({ error: 'User đăng nhập không hợp lệ, vui lòng kiểm tra lại' });
-    }
-
-    req.userLogin = userLogin;
-    res.cookie('accessToken', result.accessToken, {
-        maxAge: 60 * 60 * 1000,  // 1h
-        httpOnly: true,
-        signed: true,
-        path: '/',
-        sameSite: 'none',
-        secure: true // Important when using sameSite: 'none'
-    });
-
-    return res.status(200).json({ message: 'Login successful', token: result.tokenForClient });
+  if (!refreshToken) {
+    return res.status(402).json({ message: 'Bạn chưa có refeshToken, yêu cầu đăng nhập lại' });
   }
 
-  if (!req.userLogin.id) {
+  const checkAccessToken = jwt.verify(accessToken, envConfig.accessSecretKey);
+
+  if (checkAccessToken.exp < Math.floor(Date.now() / 1000)); {
+    try {
+      // TODO1: Kiểm tra xem refreshToken có trong cookie hay không
+      const refreshToken = req.signedCookies.refreshToken;
+      if (!refreshToken) {
+        return res.status(405).json({ message: 'Bạn chưa có refeshToken, yêu cầu đăng nhập lại' });
+      }
+      // Xác thực refreshToken và lấy thông tin user
+      jwt.verify(refreshToken, envConfig.refeshSecretKey, (err, decoded) => {
+        if (err) {
+          return res.status(403).json({ message: 'Refresh token không hợp lệ' });
+        }
+        // TODO2: Cấp phát accessToken mới
+        const { id, name, email, avatar, namecode, friends, iat } = decoded
+        const newAccessToken = jwt.sign(
+          { id, name, email, avatar, namecode, friends, iat },
+          envConfig.accessSecretKey,
+          { expiresIn: '1h' } // Access token có thời gian sống 1h
+        );
+
+        // Lưu accessToken mới vào cookie
+        res.cookie('accessToken', newAccessToken, {
+          maxAge: 60 * 60 * 1000,  // 1h
+          httpOnly: true,
+          signed: true,
+          path: '/',
+          sameSite: 'none',
+          secure: true // Important when using sameSite: 'none'
+        });
+      });
+    } catch (error) {
+      return res.status(500).json({ message: 'Lỗi hệ thống' });
+    }
+  }
+
+  if (!checkAccessToken.id) {
     return res.status(403).json({ error: 'User đăng nhập không hợp lệ, vui lòng kiểm tra lại' });
   }
   next();
