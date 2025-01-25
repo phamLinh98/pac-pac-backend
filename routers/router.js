@@ -17,6 +17,5 @@ router.get('/comment/:id', checkTokenMiddleware, commentController.getCommentByL
 router.get('/user', checkTokenMiddleware, userController.getUser);
 router.post('/login', userController.loginUserByEmailAndPassword);
 router.get('/logout', userController.logoutAndRemoveAllToken);
-router.get('/refesh-token', checkTokenMiddleware, userController.refreshTokenWhenExpired);
 
 export default router;
