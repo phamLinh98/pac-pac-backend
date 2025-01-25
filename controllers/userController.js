@@ -1,4 +1,6 @@
+import { envConfig } from '../configs/envConfig.js';
 import * as userService from '../services/userService.js';
+import jwt from 'jsonwebtoken';
 // get All User 
 export const getUser = async (req, res) => {
     try {
@@ -70,3 +72,45 @@ export const logoutAndRemoveAllToken = async (req, res) => {
     });
     res.send('Cookie đã được xóa!');
 }
+
+export const refreshTokenWhenExpired = async (req, res) => {
+    try {
+        // TODO1: Kiểm tra xem refreshToken có trong cookie hay không
+        const refreshToken = req.signedCookies.refreshToken;
+        if (!refreshToken) {
+            return res.status(405).json({ message: 'Bạn chưa có refeshToken, yêu cầu đăng nhập lại' });
+        }
+        // Xác thực refreshToken và lấy thông tin user
+        jwt.verify(refreshToken, envConfig.refeshSecretKey, (err, decoded) => {
+            if (err) {
+                return res.status(403).json({ message: 'Refresh token không hợp lệ' });
+            }
+            // TODO2: Cấp phát accessToken mới
+            const { id, name, email, avatar, namecode, friends, iat } = decoded
+            const newAccessToken = jwt.sign(
+                { id, name, email, avatar, namecode, friends, iat },
+                envConfig.accessSecretKey,
+                { expiresIn: '1h' } // Access token có thời gian sống 1h
+            );
+
+            // Lưu accessToken mới vào cookie
+            res.cookie('accessToken', newAccessToken, {
+                maxAge: 60 * 60 * 1000,  // 1h
+                httpOnly: true,
+                signed: true,
+                path: '/',
+                sameSite: 'none',
+                secure: true // Important when using sameSite: 'none'
+            });
+
+            // Trả về thành công
+            return res.status(200).json({
+                message: 'Đã cập nhật accessToken',
+                accessToken: newAccessToken,
+            });
+        });
+    } catch (error) {
+        console.error('Error refreshing token:', error);
+        return res.status(500).json({ message: 'Lỗi hệ thống' });
+    }
+};
