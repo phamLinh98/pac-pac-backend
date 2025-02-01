@@ -14,6 +14,7 @@ SELECT
     l.content,
     l.comment,
     l.like,
+    l.shared,
     l.created_at,
     u.name AS user_name,
     u.avatar AS avatar
