@@ -3,7 +3,7 @@ export const getUser = () => {
     return query;
 }
 
-const finUserViaUserId = (userId) => {
+export const finUserViaUserId = (userId) => {
   const query = `
       SELECT id, name, email, avatar, namecode, friends
       FROM "public"."user"
@@ -16,7 +16,7 @@ const finUserViaUserId = (userId) => {
 
 export const loginUserByEmailAndPassword = (email, password) => {
     const query = `
-            SELECT id, name, email, avatar, namecode, friends
+            SELECT id, name, email, avatar, namecode, friends, password
             FROM "public"."user"
             WHERE email = $1 AND password = $2
             LIMIT 1`;
@@ -40,3 +40,10 @@ export const saveRefeshToken = (userId, token) => {
     const values = [userId, token];
     return { query, values };
   };
+
+export const getListFriendViaUserId = (userId) => {
+   const query = `
+   SELECT * from list_friend where user_id = $1`;
+   const values = [userId];
+   return {query, values};
+}
