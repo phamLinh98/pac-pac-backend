@@ -16,7 +16,7 @@ export const finUserViaUserId = (userId) => {
 
 export const loginUserByEmailAndPassword = (email, password) => {
     const query = `
-            SELECT id, name, email, avatar, namecode, friends, password
+            SELECT id, name, email, avatar, namecode, friends
             FROM "public"."user"
             WHERE email = $1 AND password = $2
             LIMIT 1`;
