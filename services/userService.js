@@ -7,7 +7,7 @@ export const getUser = async () => {
     return rows;
 }
 
-export const finUserViaUserId = async(userId) => {
+export const finUserViaUserId = async (userId) => {
     const rows = await userDAL.finUserViaUserId(userId);
     return rows;
 }
@@ -17,7 +17,7 @@ export const loginUserByEmailAndPassword = async (email, password) => {
         const rows = await userDAL.loginUserByEmailAndPassword(email, password);
         const userLogin = rows[0];
         const accessToken = signAccessToken(userLogin, envConfig.accessSecretKey, { expiresIn: '1h' })
-        const refreshToken = signRefeshToken(userLogin, envConfig.refeshSecretKey,{ expiresIn: '7day' })
+        const refreshToken = signRefeshToken(userLogin, envConfig.refeshSecretKey, { expiresIn: '7day' })
         const tokenForClient = signRefeshToken(userLogin, envConfig.accessSecretKey, { expiresIn: '1h' });
         await userDAL.saveRefeshToken(userLogin.id, refreshToken);
         return {
@@ -28,5 +28,14 @@ export const loginUserByEmailAndPassword = async (email, password) => {
         }
     } catch (error) {
         console.log('Khong tim thay user', error);
+    }
+}
+
+export const getListFriendViaUserId = async (userId) => {
+    try {
+        const rows = await userDAL.getListFriendViaUserId(userId);
+        return rows;
+    } catch (error) {
+        console.log('error', error);
     }
 }

@@ -18,5 +18,6 @@ router.get('/user', checkTokenMiddleware, userController.getUser);
 router.post('/login', userController.loginUserByEmailAndPassword);
 router.get('/logout', userController.logoutAndRemoveAllToken);
 router.get('/refesh-token', userController.refreshTokenWhenExpired);
+router.get('/list-friend/:id', userController.getListFriendViaUserId);
 
 export default router;

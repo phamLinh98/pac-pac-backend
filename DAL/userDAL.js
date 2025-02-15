@@ -25,3 +25,10 @@ export const saveRefeshToken = async (userId, token) => {
    const rows = await sql(query, values);
    return rows;
 }
+
+
+export const getListFriendViaUserId = async(userId) => {
+    const {query, values} = userModel.getListFriendViaUserId(userId);
+    const rows = await sql(query,values);
+    return rows;
+}

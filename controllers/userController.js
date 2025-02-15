@@ -114,3 +114,14 @@ export const refreshTokenWhenExpired = async (req, res) => {
         return res.status(500).json({ message: 'Lỗi hệ thống' });
     }
 };
+
+export const getListFriendViaUserId = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const getListFriendViaUserId = await userService.getListFriendViaUserId(userId);
+        res.status(200).json(getListFriendViaUserId);
+    }
+    catch (error) {
+        console.log('error', error);
+    }
+}
