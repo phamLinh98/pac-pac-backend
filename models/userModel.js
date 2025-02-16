@@ -47,3 +47,11 @@ export const getListFriendViaUserId = (userId) => {
    const values = [userId];
    return {query, values};
 }
+
+export const getUserFriendOfLoginUser = (userId) => {
+  const query = `SELECT id, name, email, avatar
+                 FROM "public"."user"
+                 WHERE id != $1 `;
+  const values = [userId];
+  return {query, values};
+}

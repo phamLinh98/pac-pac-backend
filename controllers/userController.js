@@ -5,7 +5,8 @@ import jwt from 'jsonwebtoken';
 export const getUser = async (req, res) => {
     try {
         // Query dữ liệu từ bảng "user"
-        const result = await userService.getUser();
+        const idRequest = req.params.id;
+        const result = await userService.getUser(idRequest);
         // Trả về dữ liệu dưới dạng JSON
         res.status(200).json(result);
     } catch (error) {
@@ -122,6 +123,16 @@ export const getListFriendViaUserId = async (req, res) => {
         res.status(200).json(getListFriendViaUserId);
     }
     catch (error) {
+        console.log('error', error);
+    }
+}
+
+export const getUserFriendOfLoginUser = async(req,res) => {
+    try {
+       const userId = req.params.id;
+       const getUserFriendOfLoginUser = await userService.getUserFriendOfLoginUser(userId);
+        res.status(200).json(getUserFriendOfLoginUser); 
+    }catch(error){
         console.log('error', error);
     }
 }

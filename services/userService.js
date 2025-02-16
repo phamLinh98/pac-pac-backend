@@ -39,3 +39,12 @@ export const getListFriendViaUserId = async (userId) => {
         console.log('error', error);
     }
 }
+
+export const getUserFriendOfLoginUser = async (userId) => {
+    try {
+        const rows = await userDAL.getUserFriendOfLoginUser(userId);
+        return rows;
+    } catch (error) {
+        console.log('error', error)
+    }
+}
