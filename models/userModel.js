@@ -5,7 +5,7 @@ export const getUser = () => {
 
 export const finUserViaUserId = (userId) => {
   const query = `
-      SELECT id, name, email, avatar, namecode, friends
+      SELECT id, name, email, avatar, namecode, friends, background
       FROM "public"."user"
       WHERE id = $1
       LIMIT 1
@@ -16,7 +16,7 @@ export const finUserViaUserId = (userId) => {
 
 export const loginUserByEmailAndPassword = (email, password) => {
     const query = `
-            SELECT id, name, email, avatar, namecode, friends
+            SELECT id, name, email, avatar, namecode, friends, background
             FROM "public"."user"
             WHERE email = $1 AND password = $2
             LIMIT 1`;
