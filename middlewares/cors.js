@@ -1,6 +1,6 @@
 import cors from "cors";
 
-const allowedOrigins = ['http://localhost:5173']; // Thêm các origin được phép
+const allowedOrigins = ['http://localhost:5173',"https://pac-pac-sn.vercel.app"]; // Thêm các origin được phép
 
 const corsOptions = {
     origin: (origin, callback) => {
