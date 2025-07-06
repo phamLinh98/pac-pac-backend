@@ -10,7 +10,7 @@ const router = express.Router();
 router.get('/list', checkTokenMiddleware, listController.getList);
 router.get('/list/:id', checkTokenMiddleware, listController.getListStatusOfOneUser);
 
-router.get('/story', checkTokenMiddleware, storyController.getStory);
+router.get('/story', storyController.getStory);
 router.get('/comment', checkTokenMiddleware, commentController.getComment);
 router.get('/comment/:id', checkTokenMiddleware, commentController.getCommentByListId);
 

@@ -16,7 +16,10 @@ app.use(cookieParser(envConfig.accessSecretKey));
 // Định nghĩa API GET /list
 app.use(router);
 
-// Chạy server trên port 3000
-app.listen(3000, () => {
-    console.log("Server running at http://localhost:3000");
+// Lấy cổng từ biến môi trường hoặc mặc định là 3000
+const PORT = process.env.PORT || 4000;
+
+// Chạy server trên cổng được cấu hình
+app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
 });
