@@ -120,7 +120,7 @@ export const getListFriendViaUserId = async (req, res) => {
     try {
         const userId = req.params.id;
         const getListFriendViaUserId = await userService.getListFriendViaUserId(userId);
-        res.status(200).json(getListFriendViaUserId);
+        return res.status(200).json(getListFriendViaUserId);
     }
     catch (error) {
         console.log('error', error);
@@ -131,7 +131,7 @@ export const getUserFriendOfLoginUser = async(req,res) => {
     try {
        const userId = req.params.id;
        const getUserFriendOfLoginUser = await userService.getUserFriendOfLoginUser(userId);
-        res.status(200).json(getUserFriendOfLoginUser); 
+       return res.status(200).json(getUserFriendOfLoginUser); 
     }catch(error){
         console.log('error', error);
     }
