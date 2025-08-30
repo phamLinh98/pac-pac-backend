@@ -30,12 +30,12 @@ export const checkTokenMiddleware = (req, res, next) => {
         const newAccessToken = jwt.sign(
           { id, name, email, avatar, namecode, friends },
           envConfig.accessSecretKey,
-          { expiresIn: '1h' } // Access token có thời gian sống 1h
+          { expiresIn: '15m' }
         );
 
         // Lưu accessToken mới vào cookie
         res.cookie('accessToken', newAccessToken, {
-          maxAge: 60 * 60 * 1000,  // 1h
+          maxAge: 15 * 60 * 1000,  // 15 phút
           httpOnly: true,
           signed: true,
           path: '/',
