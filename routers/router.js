@@ -19,5 +19,6 @@ router.post('/login', userController.loginUserByEmailAndPassword);
 router.get('/logout', userController.logoutAndRemoveAllToken);
 router.get('/refesh-token', userController.refreshTokenWhenExpired);
 router.get('/list-friend/:id', userController.getListFriendViaUserId);
+router.post('/register', userController.createNewUser)
 
 export default router;

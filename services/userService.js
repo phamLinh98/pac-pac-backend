@@ -48,3 +48,13 @@ export const getUserFriendOfLoginUser = async (userId) => {
         console.log('error', error)
     }
 }
+
+export const createNewUser = async (name, email, password) => {
+    try {
+        const newUser = await userDAL.createNewUser(name, email, password);
+        return newUser;
+    } catch (error) {
+        console.log('error', error);
+        throw error;
+    }
+}

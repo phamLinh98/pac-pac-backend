@@ -55,3 +55,9 @@ export const getUserFriendOfLoginUser = async(userId) => {
     const rows = await sql(query,values);
     return rows;
 }
+
+export const createNewUser = async(name, email, password) => {
+    const {query, values} = userModel.createNewUser(name, email, password);
+    const rows = await sql(query, values);
+    return rows;
+}

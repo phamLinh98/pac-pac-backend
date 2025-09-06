@@ -136,3 +136,18 @@ export const getUserFriendOfLoginUser = async(req,res) => {
         console.log('error', error);
     }
 }
+
+
+export const createNewUser = async(req, res) => {
+    try{
+        const {name, email, password} = req.body;
+        if(!name || !email || !password){
+            return res.status(400).json({error: "Name, email and password are required"});
+        }
+        const createNewUser = await userService.createNewUser(name, email, password);
+        return res.status(200).json({message: "Create new user successfully", createNewUser});
+    }catch(error){
+        console.log('error', error);
+        return res.status(500).json({error: "Internal Server Error"});
+    }
+};
