@@ -151,3 +151,15 @@ export const createNewUser = async(req, res) => {
         return res.status(500).json({error: "Internal Server Error"});
     }
 };
+
+export const updateAvatarOfUser = async(req, res) => {
+    try{
+        const userId = req.params.id;
+        const {avatar} = req.body;
+        const updatedUser = await userService.updateAvatarOfUser(userId, avatar);
+        return res.status(200).json({message: "Update avatar successfully", updatedUser});
+    }catch(error){
+        console.log('error', error);
+        return res.status(500).json({error: "Internal Server Error"});
+    }
+};

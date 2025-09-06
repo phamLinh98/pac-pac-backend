@@ -65,3 +65,13 @@ export const createNewUser = (name, email, password) => {
   const values = [name, email, password];
   return { query, values };
 };
+
+export const updateAvatar = (userId, avatar) => {
+  const query = `
+       UPDATE "public"."user"
+       SET avatar = $1
+       WHERE id = $2
+   `;
+  const values = [avatar, userId];
+  return { query, values };
+};

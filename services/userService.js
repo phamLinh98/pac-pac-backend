@@ -58,3 +58,13 @@ export const createNewUser = async (name, email, password) => {
         throw error;
     }
 }
+
+export const updateAvatarOfUser = async (userId, avatarUrl) => {
+    try {
+        const updatedUser = await userDAL.updateAvatar(userId, avatarUrl);
+        return updatedUser;
+    } catch (error) {
+        console.log('error', error);
+        throw error;
+    }
+}
