@@ -59,24 +59,20 @@ export const getUserFriendOfLoginUser = (userId) => {
 export const createNewUser = (name, email, password) => {
   const query = `
     WITH new_user AS (
-      INSERT INTO "public"."user" (name, email, password, avatar, created_at)
-      VALUES ($1, $2, $3, 'https://i.pinimg.com/1200x/2f15f2e8c688b3120d3d26467b06330c.jpg', NOW())
-      RETURNING id, name, email, avatar
-    )
-    SELECT new_user.id AS user_id, new_user.name, new_user.email, new_user.avatar
-    FROM new_user
+  INSERT INTO "public"."user" (name, email, password, avatar, created_at)
+  VALUES ($1, $2, $3, 'https://i.pinimg.com/1200x/2f15f2e8c688b3120d3d26467b06330c.jpg', NOW())
+  RETURNING id, name, email, avatar
+),
+insert_list AS (
+  INSERT INTO list (user_id)
+  SELECT id FROM new_user
+  RETURNING user_id
+)
+SELECT new_user.id AS user_id, new_user.name, new_user.email, new_user.avatar
+FROM new_user;
+
   `;
   const values = [name, email, password];
-  return { query, values };
-};
-
-export const createUserList = (userId) => {
-  const query = `
-    INSERT INTO list (user_id, content, comment, "like", shared, likestatus, created_at)
-    VALUES ($1, '{}'::jsonb, 0, 0, 0, false, NOW())
-    RETURNING id, user_id
-  `;
-  const values = [userId];
   return { query, values };
 };
 
