@@ -22,7 +22,7 @@ export const getListStatusOfOneUser = async (userId) => {
     const checkUserIdExistInListAndUser = rows[0].result;
     switch (checkUserIdExistInListAndUser) {
         case 1: {
-            const { query, values } = listModel.getListStatusOfOneUser(userId);
+            const { query, values } = listModel.getListStatusAllUserViaId(userId);
             const rows = await sql(query, values);
             const processedRows = rows.map(row => {
                 if (row.content === null || row.content === undefined) {

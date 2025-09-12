@@ -1,5 +1,5 @@
 export const getList = () => {
-    const query = `WITH updated_list AS (
+  const query = `WITH updated_list AS (
     UPDATE list
     SET comment = (
         SELECT COUNT(*)
@@ -23,32 +23,58 @@ FROM
     updated_list l
 JOIN
     "public"."user" u ON l.user_id = u.id;`;
-    return query;
+  return query;
 };
 
 // After click user profile get all list status of that user
 export const getListStatusOfOneUser = (userId) => {
-    const query = `SELECT l.*,u.namecode,u.name,u.avatar, u.friends
+  const query = `SELECT l.*,u.namecode,u.name,u.avatar, u.friends
                    FROM list l
                    JOIN "public"."user" u ON l.user_id = u.id
                    WHERE l.user_id = $1`;
-    const values = [userId];
-    return { query, values };
-}
+  const values = [userId];
+  return { query, values };
+};
+
+export const getListStatusAllUserViaId = (userId) => {
+  const query = `SELECT 
+    l.id,
+    l.user_id,
+    l.content,
+    l."like",
+    l.shared,
+    l.comment,
+    l.created_at,
+    l.updated_at,
+    l.likestatus
+FROM list l
+WHERE l.user_id IN (
+    SELECT DISTINCT (elem::text)::integer
+    FROM public.user u,
+    LATERAL jsonb_array_elements_text(u.list_friend_id) AS elem
+    WHERE u.list_friend_id IS NOT NULL 
+      AND jsonb_typeof(u.list_friend_id) = 'array'
+      AND jsonb_array_length(u.list_friend_id) > 0
+      AND u.id = $1
+)
+ORDER BY l.created_at DESC;`;
+  const values = [userId];
+  return { query, values };
+};
 
 //If userId exist in user table but not in list table
 export const getListReturnWhenUserIdNotExistInBoth = (userId) => {
-    const query = `SELECT id as user_id, name,namecode, avatar,friends,'{}'::jsonb 
+  const query = `SELECT id as user_id, name,namecode, avatar,friends,'{}'::jsonb 
                    AS content
                    FROM "public"."user"
                    WHERE id = $1;`;
-    const values = [userId];
-    return { query, values };
-}
+  const values = [userId];
+  return { query, values };
+};
 
-// check userId exist in user and list or not 
+// check userId exist in user and list or not
 export const checkUserIdExistInListAndUser = (userId) => {
-    const query = `
+  const query = `
         SELECT
             CASE
                 WHEN EXISTS (SELECT 1 FROM list WHERE user_id = $1) 
@@ -59,6 +85,6 @@ export const checkUserIdExistInListAndUser = (userId) => {
                 THEN 2
                 ELSE 3
                 END AS result`;
-    const values = [userId];
-    return { query, values };
+  const values = [userId];
+  return { query, values };
 };
