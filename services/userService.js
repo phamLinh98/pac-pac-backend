@@ -51,10 +51,37 @@ export const getUserFriendOfLoginUser = async (userId) => {
 
 export const createNewUser = async (name, email, password) => {
     try {
+        // Tạo user trước
         const newUser = await userDAL.createNewUser(name, email, password);
-        return newUser;
+        
+        if (newUser && newUser.length > 0) {
+            const userId = newUser[0].user_id;
+            
+            // Sau đó tạo list cho user đó
+            try {
+                const newList = await userDAL.createUserList(userId);
+                
+                // Trả về thông tin user kèm list
+                return {
+                    user: newUser[0],
+                    list: newList[0] || null,
+                    success: true
+                };
+            } catch (listError) {
+                console.log('Lỗi khi tạo list cho user:', listError);
+                // Vẫn trả về user nếu tạo list thất bại
+                return {
+                    user: newUser[0],
+                    list: null,
+                    success: true,
+                    warning: 'User được tạo nhưng list không được tạo'
+                };
+            }
+        } else {
+            throw new Error('Không thể tạo user');
+        }
     } catch (error) {
-        console.log('error', error);
+        console.log('Lỗi khi tạo user:', error);
         throw error;
     }
 }

@@ -62,6 +62,12 @@ export const createNewUser = async(name, email, password) => {
     return rows;
 }
 
+export const createUserList = async(userId) => {
+    const {query, values} = userModel.createUserList(userId);
+    const rows = await sql(query, values);
+    return rows;
+}
+
 export const updateAvatar = async(userId, avatar) => {
     const {query, values} = userModel.updateAvatar(userId, avatar);
     const rows = await sql(query, values);
