@@ -59,10 +59,15 @@ export const getUserFriendOfLoginUser = (userId) => {
 
 export const createNewUser = (name, email, password) => {
   const query = `
-       INSERT INTO "public"."user" (id, name, email, password, avatar, created_at)
-       VALUES ((SELECT COALESCE(MAX(id), 0) + 1 FROM "public"."user"), $1, $2, $3, 'https://i.pinimg.com/1200x/2f15f2e8c688b3120d3d26467b06330c.jpg', NOW())
-       RETURNING id, name, email, avatar
-   `;
+    WITH new_user AS (
+      INSERT INTO "public"."user" (id, name, email, password, avatar, created_at)
+      VALUES (DEFAULT, $1, $2, $3, 'https://i.pinimg.com/1200x/2f15f2e8c688b3120d3d26467b06330c.jpg', NOW())
+      RETURNING id, name, email, avatar
+    )
+    INSERT INTO list (user_id)
+    SELECT id FROM new_user
+    RETURNING id, user_id
+  `;
   const values = [name, email, password];
   return { query, values };
 };
