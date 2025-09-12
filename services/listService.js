@@ -8,3 +8,8 @@ export const getListStatusOfOneUser = async(userId) => {
     const rows = await listDAL.getListStatusOfOneUser(userId);
     return rows;
 }
+
+export const getListUserStatusByUserId = async(userId) => {
+    const rows = await listDAL.getListUserStatusByUserId(userId);
+    return rows;
+}

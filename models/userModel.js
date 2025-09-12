@@ -56,6 +56,7 @@ export const getUserFriendOfLoginUser = (userId) => {
   return { query, values };
 };
 
+
 export const createNewUser = (name, email, password) => {
   const query = `
        INSERT INTO "public"."user" (id, name, email, password, avatar, created_at)
