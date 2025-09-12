@@ -38,19 +38,12 @@ export const getListStatusOfOneUser = (userId) => {
 
 export const getListStatusAllUserViaId = (userId) => {
   const query = `SELECT 
-    l.id,
-    l.user_id,
-    l.content,
-    l."like",
-    l.shared,
-    l.comment,
-    l.created_at,
-    l.updated_at,
-    l.likestatus
+    l.*, uu.namecode, uu.name, uu.avatar, uu.friends
 FROM list l
+JOIN public.user uu ON l.user_id = uu.id  -- JOIN để lấy info của người tạo post
 WHERE l.user_id IN (
     SELECT DISTINCT (elem::text)::integer
-    FROM public.user u,
+    FROM public.user u,  -- Đổi alias thành 'u' cho subquery
     LATERAL jsonb_array_elements_text(u.list_friend_id) AS elem
     WHERE u.list_friend_id IS NOT NULL 
       AND jsonb_typeof(u.list_friend_id) = 'array'
