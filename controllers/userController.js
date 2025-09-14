@@ -174,3 +174,15 @@ export const getListSendFriend = async (req, res) => {
         return res.status(500).json({ error: "Internal Server Error" });
     }
 }
+
+export const updateAddFriend = async (req, res) => {
+    try {
+        const userIdSecond = req.params.id; 
+        const userIdFirst = req.params.id2;
+        const result = await userService.updateAddFriend(userIdFirst, userIdSecond);
+        return res.status(200).json({ message: "Yêu cầu kết bạn đã được gửi", result });
+    } catch (error) {
+        console.log('error', error);
+        return res.status(500).json({ error: "Internal Server Error" });
+    }
+}

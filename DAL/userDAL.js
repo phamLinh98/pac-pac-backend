@@ -79,3 +79,9 @@ export const getListSendFriend = async(userId) => {
     const rows = await sql(query, values);
     return rows;
 }
+
+export const updateAddFriend = async(userId, userId2) => {
+    const {query, values} = userModel.updateAddFriend(userId, userId2);
+    const rows = await sql(query, values);
+    return rows;
+}

@@ -80,3 +80,14 @@ export const getListSendFriend = async (userId) => {
         console.log('error', error);
     }
 }
+
+export const updateAddFriend = async (userId, userId2) => {
+    try {
+        const result = await userDAL.updateAddFriend(userId, userId2);
+        return result;
+    }
+    catch (error) {
+        console.log('error', error);
+        throw error;
+    }
+}

@@ -92,3 +92,25 @@ export const getListSendFriend = (userId) => {
   const values = [userId];
   return { query, values };
 };
+
+export const updateAddFriend = (userId, userId2) => {
+  const query = `
+BEGIN;
+
+UPDATE users
+SET list_friend_id = array_append(list_friend_id, $1)
+WHERE id = $2;
+
+UPDATE users
+SET list_friend_id = array_append(list_friend_id, $2)
+WHERE id = $1;
+
+DELETE FROM friendship_send
+WHERE user_second_id = $2 AND user_first_id = $1;
+
+COMMIT;
+
+  `;
+  const values = [userId, userId2];
+  return { query, values };
+};

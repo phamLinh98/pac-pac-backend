@@ -15,6 +15,7 @@ router.get('/comment', checkTokenMiddleware, commentController.getComment);
 router.get('/comment/:id', checkTokenMiddleware, commentController.getCommentByListId);
 router.get('/send-friend/:id', checkTokenMiddleware, userController.getListSendFriend);
 
+
 router.get('/user/:id', checkTokenMiddleware, userController.getUserFriendOfLoginUser);
 router.post('/login', userController.loginUserByEmailAndPassword);
 router.get('/logout', userController.logoutAndRemoveAllToken);
@@ -22,5 +23,6 @@ router.get('/refesh-token', userController.refreshTokenWhenExpired);
 router.get('/list-friend/:id', userController.getListFriendViaUserId);
 router.post('/register', userController.createNewUser)
 router.put('/user/:id', userController.updateAvatarOfUser);
+router.put('/update-add-friend/:id/:id2', checkTokenMiddleware, userController.updateAddFriend);
 
 export default router;
