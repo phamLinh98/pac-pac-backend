@@ -16,7 +16,7 @@ export const finUserViaUserId = (userId) => {
 
 export const loginUserByEmailAndPassword = (email, password) => {
   const query = `
-            SELECT id, name, email, avatar, namecode, friends, background
+            SELECT id, name, email, avatar, namecode, friends, background, list_friend_id
             FROM "public"."user"
             WHERE email = $1 AND password = $2
             LIMIT 1`;
@@ -49,7 +49,7 @@ export const getListFriendViaUserId = (userId) => {
 };
 
 export const getUserFriendOfLoginUser = (userId) => {
-  const query = `SELECT id, name, email, avatar
+  const query = `SELECT id, name, email, avatar, list_friend_id
                  FROM "public"."user"
                  WHERE id != $1 `;
   const values = [userId];
