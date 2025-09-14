@@ -71,3 +71,12 @@ export const updateAvatarOfUser = async (userId, avatarUrl) => {
         throw error;
     }
 }
+
+export const getListSendFriend = async (userId) => {
+    try {
+        const rows = await userDAL.getListSendFriend(userId);
+        return rows;
+    } catch (error) {
+        console.log('error', error);
+    }
+}

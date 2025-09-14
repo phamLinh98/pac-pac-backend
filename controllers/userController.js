@@ -163,3 +163,14 @@ export const updateAvatarOfUser = async(req, res) => {
         return res.status(500).json({error: "Internal Server Error"});
     }
 };
+
+export const getListSendFriend = async (req, res) => {
+    try {
+        const userId = req.params.id; // Lấy userId từ req.params
+        const listSendFriend = await userService.getListSendFriend(userId);
+        return res.status(200).json(listSendFriend);
+    } catch (error) {
+        console.log('error', error);
+        return res.status(500).json({ error: "Internal Server Error" });
+    }
+}

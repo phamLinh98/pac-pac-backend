@@ -85,3 +85,10 @@ export const updateAvatar = (userId, avatar) => {
   const values = [avatar, userId];
   return { query, values };
 };
+
+export const getListSendFriend = (userId) => {
+  const query = `
+   SELECT * FROM friendships_send WHERE user_id_second= $1`;
+  const values = [userId];
+  return { query, values };
+};

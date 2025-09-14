@@ -13,6 +13,7 @@ router.get('/list-user/:id', checkTokenMiddleware, listController.getListUserSta
 router.get('/story', storyController.getStory);
 router.get('/comment', checkTokenMiddleware, commentController.getComment);
 router.get('/comment/:id', checkTokenMiddleware, commentController.getCommentByListId);
+router.get('/send-friend/:id', checkTokenMiddleware, userController.getListSendFriend);
 
 router.get('/user/:id', checkTokenMiddleware, userController.getUserFriendOfLoginUser);
 router.post('/login', userController.loginUserByEmailAndPassword);
