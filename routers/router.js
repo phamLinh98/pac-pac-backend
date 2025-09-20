@@ -25,4 +25,6 @@ router.post('/register', userController.createNewUser)
 router.put('/user/:id', userController.updateAvatarOfUser);
 router.put('/update-add-friend/:id/:id2', checkTokenMiddleware, userController.updateAddFriend);
 
+router.post("/add-comment/:userId/:listId", checkTokenMiddleware, commentController.addComment);
+
 export default router;

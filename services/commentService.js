@@ -9,3 +9,8 @@ export const getCommentByListId = async (listId) => {
     const rows = await commentDAL.getCommentByListId(listId);
     return rows;
 }
+
+export const addComment = async (userId, listId, content) => {
+    const newComment = await commentDAL.addComment(userId, listId, content);
+    return newComment;
+}

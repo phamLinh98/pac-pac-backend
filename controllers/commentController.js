@@ -35,3 +35,21 @@ export const getCommentByListId = async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
+export const addComment = async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const listId = req.params.listId;
+        const { content } = req.body;
+
+        // Thêm comment vào cơ sở dữ liệu
+        const newComment = await commentService.addComment(userId, listId, content);
+
+        // Trả về dữ liệu comment mới dưới dạng JSON
+        res.status(200).json(newComment);
+    } catch (error) {
+        // Xử lý lỗi nếu có
+        console.error("Error adding comment to the database:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+}

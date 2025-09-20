@@ -12,3 +12,9 @@ export const getCommentByListId = async (listId) => {
     const rows = await sql(query,values);
     return rows;
 }
+
+export const addComment = async (userId, listId, content) => {
+    const { query, values } = commentModel.addComment(userId, listId, content);
+    const [newComment] = await sql(query, values);
+    return newComment;
+}
