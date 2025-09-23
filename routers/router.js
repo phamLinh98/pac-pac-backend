@@ -15,7 +15,7 @@ router.get('/comment', checkTokenMiddleware, commentController.getComment);
 router.get('/comment/:id', checkTokenMiddleware, commentController.getCommentByListId);
 router.get('/send-friend/:id', checkTokenMiddleware, userController.getListSendFriend);
 
-
+//Test
 router.get('/user/:id', checkTokenMiddleware, userController.getUserFriendOfLoginUser);
 router.post('/login', userController.loginUserByEmailAndPassword);
 router.get('/logout', userController.logoutAndRemoveAllToken);
