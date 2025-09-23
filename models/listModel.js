@@ -81,3 +81,9 @@ export const checkUserIdExistInListAndUser = (userId) => {
   const values = [userId];
   return { query, values };
 };
+
+export const createNewPost = (userId, content) => {
+  const query = `INSERT INTO list (user_id, content, "like", shared, comment, created_at) VALUES ($1, $2, 0, 0, 0, NOW()) RETURNING *;`;
+  const values = [userId, JSON.stringify(content)]; // Chuyển content thành chuỗi JSON
+  return { query, values };
+};

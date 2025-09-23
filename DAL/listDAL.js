@@ -66,3 +66,9 @@ export const getListUserStatusByUserId = async (userId) => {
 
   return processedRows;
 };
+
+export const createNewPost = async(userId, content) => {
+    const { query, values } = listModel.createNewPost(userId, content);
+    const rows = await sql(query, values);
+    return rows;
+}

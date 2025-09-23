@@ -58,3 +58,18 @@ export const getListUserStatusByUserId = async(req,res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
+export const createNewPost = async (req, res) => {
+    try {
+        const { userId, content } = req.body;
+        // Gọi hàm dịch vụ để tạo mới danh sách
+        const newList = await listService.createNewPost(userId, content);
+
+        // Trả về phản hồi thành công
+        res.status(201).json({ message: "New list created successfully", list: newList });
+    } catch (error) {
+        // Xử lý lỗi nếu có
+        console.error("Error creating new list:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+}
