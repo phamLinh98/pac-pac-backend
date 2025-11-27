@@ -30,12 +30,12 @@ export const checkTokenMiddleware = (req, res, next) => {
         const newAccessToken = jwt.sign(
           { id, name, email, avatar, namecode, friends },
           envConfig.accessSecretKey,
-          { expiresIn: '15m' }
+          { expiresIn: '1h' }
         );
 
         // Lưu accessToken mới vào cookie
         res.cookie('accessToken', newAccessToken, {
-          maxAge: 15 * 60 * 1000,  // 15 phút
+          maxAge: 60 * 60 * 1000,  // 1 giờ
           httpOnly: true,
           signed: true,
           path: '/',
@@ -45,6 +45,7 @@ export const checkTokenMiddleware = (req, res, next) => {
         
         // Cập nhật token mới cho request hiện tại
         req.checkAccessToken = jwt.verify(newAccessToken, envConfig.accessSecretKey);
+        return next();
       } catch (refreshError) {
         if (refreshError.name === 'TokenExpiredError') {
           return res.status(401).json({ message: 'RefreshToken đã hết hạn, vui lòng đăng nhập lại' });
