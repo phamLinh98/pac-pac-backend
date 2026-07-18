@@ -26,10 +26,29 @@ export const getListStatusOfOneUser = async (userId) => {
       const rows = await sql(query, values);
       const processedRows = rows.map((row) => {
         if (row.content === null || row.content === undefined) {
-          return { ...row, content: {} }; // Tạo một object mới với content là {}
-        } else {
-          return row; // Trả về row ban đầu nếu content không null
+          return {
+            ...row,
+            content: {},
+          };
         }
+
+        if (typeof row.content === "string") {
+          try {
+            return {
+              ...row,
+              content: JSON.parse(row.content),
+            };
+          } catch (error) {
+            console.error(`Invalid content JSON at list id ${row.id}:`, error);
+
+            return {
+              ...row,
+              content: {},
+            };
+          }
+        }
+
+        return row;
       });
 
       return processedRows;
@@ -40,10 +59,29 @@ export const getListStatusOfOneUser = async (userId) => {
       const rows = await sql(query, values);
       const processedRows = rows.map((row) => {
         if (row.content === null || row.content === undefined) {
-          return { ...row, content: {} }; // Tạo một object mới với content là {}
-        } else {
-          return row; // Trả về row ban đầu nếu content không null
+          return {
+            ...row,
+            content: {},
+          };
         }
+
+        if (typeof row.content === "string") {
+          try {
+            return {
+              ...row,
+              content: JSON.parse(row.content),
+            };
+          } catch (error) {
+            console.error(`Invalid content JSON at list id ${row.id}:`, error);
+
+            return {
+              ...row,
+              content: {},
+            };
+          }
+        }
+
+        return row;
       });
 
       return processedRows;
