@@ -37,27 +37,31 @@ export const getListStatusOfOneUser = (userId) => {
 };
 
 export const getListStatusAllUserViaId = (userId) => {
-  const query = `SELECT 
-    l.*, uu.namecode, uu.name, uu.avatar, uu.friends
-FROM list l
-JOIN public.user uu ON l.user_id = uu.id  -- JOIN để lấy info của người tạo post
-WHERE l.user_id IN (
-    SELECT DISTINCT (elem::text)::integer
-    FROM public.user u,  -- Đổi alias thành 'u' cho subquery
-    LATERAL jsonb_array_elements_text(u.list_friend_id) AS elem
-    WHERE u.list_friend_id IS NOT NULL 
-      AND jsonb_typeof(u.list_friend_id) = 'array'
-      AND jsonb_array_length(u.list_friend_id) > 0
-      AND u.id = $1
-)
-ORDER BY l.created_at DESC;`;
-  const values = [userId];
-  return { query, values };
+  const query = `
+    SELECT
+      l.*,
+      uu.namecode,
+      uu.name,
+      uu.avatar,
+      uu.friends
+    FROM public.user u
+    JOIN list l
+      ON l.user_id = ANY(u.list_friend_id)
+    JOIN public.user uu
+      ON l.user_id = uu.id
+    WHERE u.id = $1
+    ORDER BY l.created_at DESC;
+  `;
+
+  return {
+    query,
+    values: [userId],
+  };
 };
 
 //If userId exist in user table but not in list table
 export const getListReturnWhenUserIdNotExistInBoth = (userId) => {
-  const query = `SELECT id as user_id, name,namecode, avatar,friends,'{}'::jsonb 
+  const query = `SELECT id as user_id, name,namecode, avatar,friends,'{}'::jsonb
                    AS content
                    FROM "public"."user"
                    WHERE id = $1;`;
@@ -70,11 +74,11 @@ export const checkUserIdExistInListAndUser = (userId) => {
   const query = `
         SELECT
             CASE
-                WHEN EXISTS (SELECT 1 FROM list WHERE user_id = $1) 
-                AND EXISTS (SELECT 1 FROM "public"."user" WHERE id = $1) 
+                WHEN EXISTS (SELECT 1 FROM list WHERE user_id = $1)
+                AND EXISTS (SELECT 1 FROM "public"."user" WHERE id = $1)
                 THEN 1
-                WHEN NOT EXISTS (SELECT 1 FROM list WHERE user_id = $1) 
-                AND EXISTS (SELECT 1 FROM "public"."user" WHERE id = $1) 
+                WHEN NOT EXISTS (SELECT 1 FROM list WHERE user_id = $1)
+                AND EXISTS (SELECT 1 FROM "public"."user" WHERE id = $1)
                 THEN 2
                 ELSE 3
                 END AS result`;
