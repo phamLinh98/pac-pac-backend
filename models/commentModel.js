@@ -20,9 +20,18 @@ export const getCommentByListId = (listId) => {
 };
 
 export const addComment = (userId, listId, content) => {
-    const query = `INSERT INTO comment (post_id, user_id, content, created_at)
-                   VALUES ($1, $2, $3, NOW())
-                   RETURNING *`;
-    const values = [listId, userId, content];
-    return { query, values };
-}
+  const query = `
+    INSERT INTO comment (
+      list_id,
+      user_id,
+      content,
+      created_at
+    )
+    VALUES ($1, $2, $3, NOW())
+    RETURNING *
+  `;
+
+  const values = [listId, userId, content];
+
+  return { query, values };
+};
