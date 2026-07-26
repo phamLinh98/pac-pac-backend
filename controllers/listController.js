@@ -285,3 +285,125 @@ export const uploadPostImages = async (req, res) => {
     });
   }
 };
+
+/**
+ * PUT /update-post/:id
+ *
+ * Body:
+ * {
+ *   "userId": 123,
+ *   "content": {
+ *     "text": "Updated content",
+ *     "image": ["posts/123/file1.jpg", "posts/123/file2.jpg"]
+ *   },
+ *   "oldImageKeys": ["posts/123/oldfile.jpg"]  // Optional: images to delete
+ * }
+ *
+ * Quy trình:
+ * 1. Xoá ảnh cũ không còn dùng
+ * 2. Cập nhật nội dung bài viết
+ * 3. Trả về bài viết cập nhật với signed URLs
+ */
+export const updatePost = async (req, res) => {
+  try {
+    const postId = Number(req.params.id);
+
+    if (!Number.isInteger(postId) || postId <= 0) {
+      return res.status(400).json({
+        message: "postId không hợp lệ.",
+      });
+    }
+
+    const tokenUserId = Number(
+      req.user?.id ??
+        req.auth?.id ??
+        req.data?.id ??
+        req.checkAccessToken?.id
+    );
+
+    const bodyUserId = Number(req.body?.userId);
+
+    const userId =
+      Number.isInteger(tokenUserId) &&
+      tokenUserId > 0
+        ? tokenUserId
+        : bodyUserId;
+
+    if (!Number.isInteger(userId) || userId <= 0) {
+      return res.status(400).json({
+        message: "userId không hợp lệ.",
+      });
+    }
+
+    const rawContent = req.body?.content;
+
+    if (
+      !rawContent ||
+      typeof rawContent !== "object" ||
+      Array.isArray(rawContent)
+    ) {
+      return res.status(400).json({
+        message: "content không hợp lệ.",
+      });
+    }
+
+    const text =
+      typeof rawContent.text === "string"
+        ? rawContent.text.trim()
+        : "";
+
+    const image = Array.isArray(rawContent.image)
+      ? rawContent.image
+          .filter(
+            (item) =>
+              typeof item === "string" &&
+              item.trim() !== ""
+          )
+          .map((item) => item.trim())
+      : [];
+
+    if (!text && image.length === 0) {
+      return res.status(400).json({
+        message:
+          "Bài viết phải có nội dung hoặc ít nhất một hình ảnh.",
+      });
+    }
+
+    const content = {
+      text,
+      image,
+    };
+
+    const oldImageKeys = Array.isArray(
+      req.body?.oldImageKeys
+    )
+      ? req.body.oldImageKeys
+      : [];
+
+    const updatedPosts =
+      await listService.updatePost(
+        postId,
+        userId,
+        content,
+        oldImageKeys
+      );
+
+    const updatedPost =
+      Array.isArray(updatedPosts)
+        ? updatedPosts[0] ?? null
+        : updatedPosts;
+
+    return res.status(200).json({
+      message: "Cập nhật bài viết thành công.",
+      post: updatedPost,
+    });
+  } catch (error) {
+    console.error("Error updating post:", error);
+
+    return res.status(500).json({
+      message:
+        error.message ||
+        "Không thể cập nhật bài viết.",
+    });
+  }
+};

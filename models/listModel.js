@@ -209,3 +209,33 @@ export const createNewPost = (
     values,
   };
 };
+
+/**
+ * Cập nhật bài viết.
+ *
+ * content.image chỉ lưu S3 object key:
+ * posts/{userId}/{fileName}
+ */
+export const updatePost = (
+  postId,
+  userId,
+  content
+) => {
+  const query = `
+    UPDATE list
+    SET content = $1::jsonb
+    WHERE id = $2 AND user_id = $3
+    RETURNING *;
+  `;
+
+  const values = [
+    JSON.stringify(content),
+    postId,
+    userId,
+  ];
+
+  return {
+    query,
+    values,
+  };
+};

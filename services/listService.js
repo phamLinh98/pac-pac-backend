@@ -97,3 +97,72 @@ export const createNewPost = async (
     rows
   );
 };
+
+/**
+ * Cập nhật bài viết.
+ * 
+ * Quy trình:
+ * 1. Lấy bài viết cũ để có danh sách ảnh cũ
+ * 2. Xóa những ảnh không còn trong bài viết mới khỏi S3
+ * 3. Cập nhật bài viết trong database
+ * 4. Gắn signed URL cho ảnh mới
+ */
+export const updatePost = async (
+  postId,
+  userId,
+  content,
+  oldImageKeys = []
+) => {
+  if (!Number.isInteger(postId) || postId <= 0) {
+    throw new TypeError(
+      "updatePost: postId không hợp lệ."
+    );
+  }
+
+  if (!Number.isInteger(userId) || userId <= 0) {
+    throw new TypeError(
+      "updatePost: userId không hợp lệ."
+    );
+  }
+
+  if (
+    !content ||
+    typeof content !== "object" ||
+    Array.isArray(content)
+  ) {
+    throw new TypeError(
+      "updatePost: content không hợp lệ."
+    );
+  }
+
+  // Xóa ảnh cũ không còn sử dụng
+  if (Array.isArray(oldImageKeys) && oldImageKeys.length > 0) {
+    const newImageKeys = 
+      Array.isArray(content.image) 
+        ? content.image 
+        : [];
+    
+    const imagesToDelete = oldImageKeys.filter(
+      (oldKey) => !newImageKeys.includes(oldKey)
+    );
+
+    if (imagesToDelete.length > 0) {
+      await storageService.deletePostImages(imagesToDelete);
+    }
+  }
+
+  const rows = await listDAL.updatePost(
+    postId,
+    userId,
+    content
+  );
+
+  /*
+   * UPDATE RETURNING trả về object key.
+   * Service chuyển key thành signed URL
+   * trước khi trả response.
+   */
+  return storageService.attachSignedUrlsToPosts(
+    rows
+  );
+};

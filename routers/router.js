@@ -47,4 +47,10 @@ router.post(
   listController.createNewPost
 );
 
+router.put(
+  "/update-post/:id",
+  checkTokenMiddleware,
+  listController.updatePost
+);
+
 export default router;

@@ -195,3 +195,41 @@ export const createNewPost = async (
 
   return normalizeRowsContent(rows);
 };
+
+/**
+ * Cập nhật bài viết.
+ */
+export const updatePost = async (
+  postId,
+  userId,
+  content
+) => {
+  validateUserId(userId, "updatePost");
+
+  if (!Number.isInteger(postId) || postId <= 0) {
+    throw new TypeError(
+      "updatePost: postId phải là số nguyên dương."
+    );
+  }
+
+  if (
+    !content ||
+    typeof content !== "object" ||
+    Array.isArray(content)
+  ) {
+    throw new TypeError(
+      "updatePost: content không hợp lệ."
+    );
+  }
+
+  const { query, values } =
+    listModel.updatePost(
+      postId,
+      userId,
+      content
+    );
+
+  const rows = await sql(query, values);
+
+  return normalizeRowsContent(rows);
+};
