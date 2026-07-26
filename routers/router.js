@@ -4,6 +4,9 @@ import * as storyController from '../controllers/storyController.js';
 import * as commentController from '../controllers/commentController.js';
 import * as userController from '../controllers/userController.js';
 import { checkTokenMiddleware } from '../middlewares/checkTokenNotValid.js';
+import {
+  uploadPostImagesMiddleware,
+} from "../middlewares/uploadPostImagesMiddleware.js";
 
 const router = express.Router();
 
@@ -27,5 +30,21 @@ router.put('/update-add-friend/:id/:id2', checkTokenMiddleware, userController.u
 
 router.post("/add-comment/:userId/:listId", checkTokenMiddleware, commentController.addComment);
 router.post('/add-post', checkTokenMiddleware, listController.createNewPost);
+
+router.post(
+  "/upload-post-images",
+  checkTokenMiddleware,
+  uploadPostImagesMiddleware.array(
+    "images",
+    10
+  ),
+  listController.uploadPostImages
+);
+
+router.post(
+  "/add-post",
+  checkTokenMiddleware,
+  listController.createNewPost
+);
 
 export default router;

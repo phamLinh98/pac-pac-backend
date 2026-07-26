@@ -1,4 +1,5 @@
 import * as listService from '../services/listService.js'
+import * as storageService from "../services/storageService.js";
 
 export const getList = async (req, res) => {
     try {
@@ -59,17 +60,115 @@ export const getListUserStatusByUserId = async(req,res) => {
     }
 };
 
-export const createNewPost = async (req, res) => {
-    try {
-        const { userId, content } = req.body;
-        // Gọi hàm dịch vụ để tạo mới danh sách
-        const newList = await listService.createNewPost(userId, content);
+export const createNewPost = (
+  userId,
+  content
+) => {
+  const query = `
+    INSERT INTO list (
+      user_id,
+      content,
+      "like",
+      shared,
+      comment,
+      created_at
+    )
+    VALUES (
+      $1,
+      $2::jsonb,
+      0,
+      0,
+      0,
+      NOW()
+    )
+    RETURNING *;
+  `;
 
-        // Trả về phản hồi thành công
-        res.status(201).json({ message: "New list created successfully", list: newList });
-    } catch (error) {
-        // Xử lý lỗi nếu có
-        console.error("Error creating new list:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+  const values = [
+    userId,
+    JSON.stringify(content),
+  ];
+
+  return {
+    query,
+    values,
+  };
+};
+
+export const uploadPostImages = async (
+  req,
+  res
+) => {
+  try {
+    const files = Array.isArray(req.files)
+      ? req.files
+      : [];
+
+    if (files.length === 0) {
+      return res.status(400).json({
+        message:
+          "Không có hình ảnh nào được upload.",
+      });
     }
-}
+
+    const tokenUserId = Number(
+      req.user?.id ??
+      req.auth?.id ??
+      req.data?.id
+    );
+
+    const bodyUserId = Number(
+      req.body?.userId
+    );
+
+    const userId =
+      Number.isFinite(tokenUserId) &&
+      tokenUserId > 0
+        ? tokenUserId
+        : bodyUserId;
+
+    if (
+      !Number.isFinite(userId) ||
+      userId <= 0
+    ) {
+      return res.status(400).json({
+        message: "userId không hợp lệ.",
+      });
+    }
+
+    const imageKeys =
+      await storageService.uploadPostImages(
+        userId,
+        files
+      );
+
+    /*
+     * signed URL chỉ dùng để preview ngay sau upload.
+     * Không lưu signedUrls vào database.
+     */
+    const signedUrls =
+      await storageService.getPostImageSignedUrls(
+        imageKeys
+      );
+
+    return res.status(201).json({
+      message:
+        "Upload hình ảnh thành công.",
+
+      imageKeys,
+
+      signedUrls,
+    });
+  } catch (error) {
+    console.error(
+      "Error uploading post images:",
+      error
+    );
+
+    return res.status(500).json({
+      message:
+        error.message ||
+        "Upload hình ảnh thất bại.",
+    });
+  }
+};
