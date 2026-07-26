@@ -166,3 +166,49 @@ export const updatePost = async (
     rows
   );
 };
+
+/**
+ * Xoá bài viết.
+ * 
+ * Quy trình:
+ * 1. Xoá bài viết khỏi database
+ * 2. Lấy danh sách ảnh từ bài vừa xoá
+ * 3. Xoá tất cả ảnh khỏi S3
+ */
+export const deletePost = async (
+  postId,
+  userId
+) => {
+  if (!Number.isInteger(postId) || postId <= 0) {
+    throw new TypeError(
+      "deletePost: postId không hợp lệ."
+    );
+  }
+
+  if (!Number.isInteger(userId) || userId <= 0) {
+    throw new TypeError(
+      "deletePost: userId không hợp lệ."
+    );
+  }
+
+  const rows = await listDAL.deletePost(
+    postId,
+    userId
+  );
+
+  // Lấy danh sách ảnh từ bài viết vừa xoá
+  if (Array.isArray(rows) && rows.length > 0) {
+    const deletedPost = rows[0];
+    const content = deletedPost.content ?? {};
+    const imageKeys = Array.isArray(content.image)
+      ? content.image
+      : [];
+
+    // Xoá tất cả ảnh khỏi S3
+    if (imageKeys.length > 0) {
+      await storageService.deletePostImages(imageKeys);
+    }
+  }
+
+  return rows;
+};

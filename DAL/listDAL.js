@@ -233,3 +233,32 @@ export const updatePost = async (
 
   return normalizeRowsContent(rows);
 };
+
+/**
+ * Xoá bài viết.
+ *
+ * Xoá bài viết và trả về thông tin bài vừa xoá
+ * để service có thể lấy danh sách ảnh cần xoá từ S3.
+ */
+export const deletePost = async (
+  postId,
+  userId
+) => {
+  validateUserId(userId, "deletePost");
+
+  if (!Number.isInteger(postId) || postId <= 0) {
+    throw new TypeError(
+      "deletePost: postId phải là số nguyên dương."
+    );
+  }
+
+  const { query, values } =
+    listModel.deletePost(
+      postId,
+      userId
+    );
+
+  const rows = await sql(query, values);
+
+  return normalizeRowsContent(rows);
+};

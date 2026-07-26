@@ -57,4 +57,10 @@ router.put(
   listController.updatePost
 );
 
+router.delete(
+  "/delete-post/:id",
+  checkTokenMiddleware,
+  listController.deletePost
+);
+
 export default router;

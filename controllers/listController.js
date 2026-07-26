@@ -444,3 +444,74 @@ export const updatePost = async (req, res) => {
     });
   }
 };
+
+/**
+ * DELETE /delete-post/:id
+ *
+ * Xoá bài viết và tất cả ảnh liên quan khỏi S3.
+ */
+export const deletePost = async (req, res) => {
+  try {
+    const postId = Number(req.params.id);
+
+    if (
+      !Number.isInteger(postId) ||
+      postId <= 0
+    ) {
+      return res.status(400).json({
+        message: "postId không hợp lệ.",
+      });
+    }
+
+    const tokenUserId = Number(
+      req.user?.id ??
+        req.auth?.id ??
+        req.data?.id ??
+        req.checkAccessToken?.id
+    );
+
+    const bodyUserId = Number(req.body?.userId);
+
+    const userId =
+      Number.isInteger(tokenUserId) &&
+      tokenUserId > 0
+        ? tokenUserId
+        : bodyUserId;
+
+    if (!Number.isInteger(userId) || userId <= 0) {
+      return res.status(400).json({
+        message: "userId không hợp lệ.",
+      });
+    }
+
+    const deletedPosts =
+      await listService.deletePost(
+        postId,
+        userId
+      );
+
+    const deletedPost =
+      Array.isArray(deletedPosts)
+        ? deletedPosts[0] ?? null
+        : deletedPosts;
+
+    if (!deletedPost) {
+      return res.status(404).json({
+        message: "Không tìm thấy bài viết.",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Xoá bài viết thành công.",
+      post: deletedPost,
+    });
+  } catch (error) {
+    console.error("Error deleting post:", error);
+
+    return res.status(500).json({
+      message:
+        error.message ||
+        "Không thể xoá bài viết.",
+    });
+  }
+};

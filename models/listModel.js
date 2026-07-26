@@ -239,3 +239,31 @@ export const updatePost = (
     values,
   };
 };
+
+/**
+ * Xoá bài viết.
+ *
+ * Trả về bài viết vừa bị xoá
+ * để frontend và service có thể
+ * lấy danh sách ảnh cần xoá từ S3.
+ */
+export const deletePost = (
+  postId,
+  userId
+) => {
+  const query = `
+    DELETE FROM list
+    WHERE id = $1 AND user_id = $2
+    RETURNING *;
+  `;
+
+  const values = [
+    postId,
+    userId,
+  ];
+
+  return {
+    query,
+    values,
+  };
+};
