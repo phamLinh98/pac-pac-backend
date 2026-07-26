@@ -2,9 +2,23 @@ import { envConfig } from "../configs/envConfig.js";
 import jwt from 'jsonwebtoken';
 
 // tokenMiddleware.js
+// Helper function to extract token from Authorization header
+const getTokenFromHeader = (req) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith('Bearer ')) {
+    return authHeader.slice(7); // Remove 'Bearer ' prefix
+  }
+  return null;
+};
+
 export const checkTokenMiddleware = (req, res, next) => {
-  const accessToken = req.signedCookies?.accessToken;
-  const refreshToken = req.signedCookies?.refreshToken;
+  // Try to get accessToken from cookies first, then from Authorization header
+  let accessToken = req.signedCookies?.accessToken;
+  let refreshToken = req.signedCookies?.refreshToken;
+  
+  if (!accessToken) {
+    accessToken = getTokenFromHeader(req);
+  }
 
   if (!accessToken) {
     return res.status(401).json({ error: "Bạn chưa được cấp quyền truy cập hoặc quyền truy cập bị từ chối" });

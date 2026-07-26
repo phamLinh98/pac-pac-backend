@@ -47,7 +47,12 @@ export const loginUserByEmailAndPassword = async (req, res) => {
             secure: true // Important when using sameSite: 'none'
         });
 
-        return res.status(200).json({ message: 'Login successful', token: result.tokenForClient });
+        return res.status(200).json({ 
+            message: 'Login successful', 
+            token: result.tokenForClient,
+            accessToken: result.accessToken,
+            refreshToken: result.refreshToken
+        });
 
     } catch (error) {
         console.error("Error during login:", error);
@@ -76,8 +81,17 @@ export const logoutAndRemoveAllToken = async (req, res) => {
 
 export const refreshTokenWhenExpired = async (req, res) => {
     try {
-        // TODO1: Kiểm tra xem refreshToken có trong cookie hay không
-        const refreshToken = req.signedCookies.refreshToken;
+        // TODO1: Kiểm tra xem refreshToken có trong cookie hay Authorization header
+        let refreshToken = req.signedCookies?.refreshToken;
+        
+        // Nếu không có trong cookie, kiểm tra Authorization header
+        if (!refreshToken) {
+            const authHeader = req.headers.authorization;
+            if (authHeader?.startsWith('Bearer ')) {
+                refreshToken = authHeader.slice(7);
+            }
+        }
+        
         if (!refreshToken) {
             return res.status(405).json({ message: 'Bạn chưa có refeshToken, yêu cầu đăng nhập lại' });
         }

@@ -44,6 +44,11 @@ const corsOptions = {
     "Authorization",
   ],
 
+  exposedHeaders: [
+    "Content-Length",
+    "X-JSON-Response-Body",
+  ],
+
   optionsSuccessStatus: 204,
 };
 
