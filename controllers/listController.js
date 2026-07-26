@@ -376,6 +376,17 @@ export const updatePost = async (req, res) => {
         ? req.body.text.trim()
         : "";
 
+    // Debug log
+    console.log("Update post request:", {
+      postId,
+      userId,
+      text: text.substring(0, 50),
+      existingImages,
+      newImageKeys,
+      allImages,
+    });
+
+    // Cho phép update chỉ text (không yêu cầu ảnh)
     if (!text && allImages.length === 0) {
       return res.status(400).json({
         message:
