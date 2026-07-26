@@ -67,35 +67,33 @@ export const getListStatusOfOneUser = (
  * Lấy bài viết của những user nằm trong list_friend_id
  * của user đang đăng nhập.
  */
-export const getListStatusAllUserViaId = (
-  userId
-) => {
-  const query = `
-    SELECT
-      l.*,
-      friend_user.namecode,
-      friend_user.name,
-      friend_user.avatar,
-      friend_user.friends
-    FROM public."user" current_user
-    JOIN list l
-      ON l.user_id = ANY(
-        COALESCE(
-          current_user.list_friend_id,
-          ARRAY[]::bigint[]
-        )
-      )
-    JOIN public."user" friend_user
-      ON l.user_id = friend_user.id
-    WHERE current_user.id = $1
-    ORDER BY l.created_at DESC;
-  `;
+ export const getListStatusAllUserViaId = (userId) => {
+   const query = `
+     SELECT
+       l.*,
+       friend_user.namecode,
+       friend_user.name,
+       friend_user.avatar,
+       friend_user.friends
+     FROM public."user" AS cu
+     JOIN list AS l
+       ON l.user_id = ANY(
+         COALESCE(
+           cu.list_friend_id,
+           ARRAY[]::bigint[]
+         )
+       )
+     JOIN public."user" AS friend_user
+       ON friend_user.id = l.user_id
+     WHERE cu.id = $1
+     ORDER BY l.created_at DESC;
+   `;
 
-  return {
-    query,
-    values: [userId],
-  };
-};
+   return {
+     query,
+     values: [userId],
+   };
+ };
 
 /**
  * User tồn tại nhưng chưa có bài viết.
