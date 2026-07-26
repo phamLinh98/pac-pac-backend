@@ -1,20 +1,53 @@
 import cors from "cors";
 
-const allowedOrigins = ['http://localhost:4000','http://localhost:5173',"https://pac-pac-sn.vercel.app","https://master.d34r0uf6wfpt35.amplifyapp.com"]; // Thêm các origin được phép
+const allowedOrigins = new Set([
+  "http://localhost:5173",
+  "http://localhost:4000",
+  "https://pac-pac-sn.vercel.app",
+  "https://master.d34r0uf6wfpt35.amplifyapp.com",
+]);
 
 const corsOptions = {
-    origin: (origin, callback) => {
-      if (allowedOrigins.indexOf(origin) !== -1 || !origin) { // cho phép các request không có origin ( ví dụ: server to server request)
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    }, 
-    credentials: true, // Cần thiết khi sử dụng cookies
-    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Các phương thức được phép
-    allowedHeaders: ['Content-Type', 'Authorization', 'Set-Cookie','Origin'], // Headers được phép
+  origin(origin, callback) {
+    /*
+     * Cho phép request không có Origin:
+     * curl, Postman, server-to-server...
+     */
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.has(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(
+      new Error(
+        `Origin ${origin} is not allowed by CORS`
+      )
+    );
+  },
+
+  credentials: true,
+
+  methods: [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS",
+  ],
+
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+  ],
+
+  optionsSuccessStatus: 204,
 };
 
-const corsMiddleware = cors(corsOptions);
+const corsMiddleware =
+  cors(corsOptions);
 
 export default corsMiddleware;
