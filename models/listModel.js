@@ -1,55 +1,93 @@
+/**
+ * Lấy toàn bộ bài viết.
+ *
+ * Giữ nguyên logic hiện tại:
+ * trước khi SELECT sẽ cập nhật số comment cho từng post.
+ */
 export const getList = () => {
-  const query = `WITH updated_list AS (
-    UPDATE list
-    SET comment = (
+  const query = `
+    WITH updated_list AS (
+      UPDATE list
+      SET comment = (
         SELECT COUNT(*)
         FROM comment c
         WHERE c.post_id = list.id
+      )
+      RETURNING *
     )
-    RETURNING *
-)
-SELECT
-    l.id,
-    l.user_id,
-    l.content,
-    l.comment,
-    l.like,
-    l.shared,
-    l.likestatus,
-    l.created_at,
-    u.name AS user_name,
-    u.avatar AS avatar
-FROM
-    updated_list l
-JOIN
-    "public"."user" u ON l.user_id = u.id;`;
+    SELECT
+      l.id,
+      l.user_id,
+      l.content,
+      l.comment,
+      l."like",
+      l.shared,
+      l.likestatus,
+      l.created_at,
+      u.name AS user_name,
+      u.avatar AS avatar
+    FROM updated_list l
+    JOIN public."user" u
+      ON l.user_id = u.id
+    ORDER BY l.created_at DESC;
+  `;
+
   return query;
 };
 
-// After click user profile get all list status of that user
-export const getListStatusOfOneUser = (userId) => {
-  const query = `SELECT l.*,u.namecode,u.name,u.avatar, u.friends
-                   FROM list l
-                   JOIN "public"."user" u ON l.user_id = u.id
-                   WHERE l.user_id = $1`;
-  const values = [userId];
-  return { query, values };
-};
-
-export const getListStatusAllUserViaId = (userId) => {
+/**
+ * Lấy toàn bộ bài viết của một user.
+ */
+export const getListStatusOfOneUser = (
+  userId
+) => {
   const query = `
     SELECT
       l.*,
-      uu.namecode,
-      uu.name,
-      uu.avatar,
-      uu.friends
-    FROM public.user u
+      u.namecode,
+      u.name,
+      u.avatar,
+      u.friends
+    FROM list l
+    JOIN public."user" u
+      ON l.user_id = u.id
+    WHERE l.user_id = $1
+    ORDER BY l.created_at DESC;
+  `;
+
+  const values = [userId];
+
+  return {
+    query,
+    values,
+  };
+};
+
+/**
+ * Lấy bài viết của những user nằm trong list_friend_id
+ * của user đang đăng nhập.
+ */
+export const getListStatusAllUserViaId = (
+  userId
+) => {
+  const query = `
+    SELECT
+      l.*,
+      friend_user.namecode,
+      friend_user.name,
+      friend_user.avatar,
+      friend_user.friends
+    FROM public."user" current_user
     JOIN list l
-      ON l.user_id = ANY(u.list_friend_id)
-    JOIN public.user uu
-      ON l.user_id = uu.id
-    WHERE u.id = $1
+      ON l.user_id = ANY(
+        COALESCE(
+          current_user.list_friend_id,
+          ARRAY[]::bigint[]
+        )
+      )
+    JOIN public."user" friend_user
+      ON l.user_id = friend_user.id
+    WHERE current_user.id = $1
     ORDER BY l.created_at DESC;
   `;
 
@@ -59,33 +97,86 @@ export const getListStatusAllUserViaId = (userId) => {
   };
 };
 
-//If userId exist in user table but not in list table
-export const getListReturnWhenUserIdNotExistInBoth = (userId) => {
-  const query = `SELECT id as user_id, name,namecode, avatar,friends,'{}'::jsonb
-                   AS content
-                   FROM "public"."user"
-                   WHERE id = $1;`;
-  const values = [userId];
-  return { query, values };
-};
+/**
+ * User tồn tại nhưng chưa có bài viết.
+ */
+export const getListReturnWhenUserIdNotExistInBoth =
+  (userId) => {
+    const query = `
+      SELECT
+        id AS user_id,
+        name,
+        namecode,
+        avatar,
+        friends,
+        '{}'::jsonb AS content
+      FROM public."user"
+      WHERE id = $1;
+    `;
 
-// check userId exist in user and list or not
-export const checkUserIdExistInListAndUser = (userId) => {
+    const values = [userId];
+
+    return {
+      query,
+      values,
+    };
+  };
+
+/**
+ * Kiểm tra user tồn tại và có post hay không.
+ *
+ * 1: user tồn tại và có post
+ * 2: user tồn tại nhưng chưa có post
+ * 3: user không tồn tại
+ */
+export const checkUserIdExistInListAndUser = (
+  userId
+) => {
   const query = `
-        SELECT
-            CASE
-                WHEN EXISTS (SELECT 1 FROM list WHERE user_id = $1)
-                AND EXISTS (SELECT 1 FROM "public"."user" WHERE id = $1)
-                THEN 1
-                WHEN NOT EXISTS (SELECT 1 FROM list WHERE user_id = $1)
-                AND EXISTS (SELECT 1 FROM "public"."user" WHERE id = $1)
-                THEN 2
-                ELSE 3
-                END AS result`;
+    SELECT
+      CASE
+        WHEN EXISTS (
+          SELECT 1
+          FROM list
+          WHERE user_id = $1
+        )
+        AND EXISTS (
+          SELECT 1
+          FROM public."user"
+          WHERE id = $1
+        )
+        THEN 1
+
+        WHEN NOT EXISTS (
+          SELECT 1
+          FROM list
+          WHERE user_id = $1
+        )
+        AND EXISTS (
+          SELECT 1
+          FROM public."user"
+          WHERE id = $1
+        )
+        THEN 2
+
+        ELSE 3
+      END AS result;
+  `;
+
   const values = [userId];
-  return { query, values };
+
+  return {
+    query,
+    values,
+  };
 };
 
+/**
+ * Tạo bài viết mới.
+ *
+ * content.image chỉ lưu S3 object key:
+ * posts/{userId}/{fileName}
+ */
 export const createNewPost = (
   userId,
   content

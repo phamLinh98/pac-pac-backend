@@ -1,112 +1,197 @@
 import sql from "../configs/db.js";
 import * as listModel from "../models/listModel.js";
 
-export const getList = async () => {
-  const queryObject = listModel.getList();
-  const rows = await sql(queryObject);
-  // Kiểm tra và thay thế trường content là null bằng {}
-  const processedRows = rows.map((row) => {
-    if (row.content === null || row.content === undefined) {
-      return { ...row, content: {} }; // Tạo một object mới với content là {}
-    } else {
-      return row; // Trả về row ban đầu nếu content không null
-    }
-  });
+/**
+ * Chuẩn hóa field content lấy từ PostgreSQL.
+ *
+ * jsonb thường được Neon trả về dưới dạng object,
+ * nhưng helper này vẫn hỗ trợ dữ liệu cũ dạng string.
+ */
+const normalizeRowContent = (row) => {
+  if (!row || typeof row !== "object") {
+    return row;
+  }
 
-  return processedRows;
+  if (
+    row.content === null ||
+    row.content === undefined
+  ) {
+    return {
+      ...row,
+      content: {},
+    };
+  }
+
+  if (typeof row.content === "string") {
+    try {
+      return {
+        ...row,
+        content: JSON.parse(row.content),
+      };
+    } catch (error) {
+      console.error(
+        `Invalid content JSON at list id ${row.id}:`,
+        error
+      );
+
+      return {
+        ...row,
+        content: {},
+      };
+    }
+  }
+
+  return row;
 };
 
-export const getListStatusOfOneUser = async (userId) => {
-  const { query, values } = listModel.checkUserIdExistInListAndUser(userId);
-  const rows = await sql(query, values);
-  const checkUserIdExistInListAndUser = rows[0].result;
-  switch (checkUserIdExistInListAndUser) {
+const normalizeRowsContent = (rows) => {
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+
+  return rows.map(normalizeRowContent);
+};
+
+const validateUserId = (userId, functionName) => {
+  if (!Number.isInteger(userId) || userId <= 0) {
+    throw new TypeError(
+      `${functionName}: userId phải là số nguyên dương. Received type: ${typeof userId}`
+    );
+  }
+};
+
+/**
+ * Lấy toàn bộ bài viết.
+ */
+export const getList = async () => {
+  const query = listModel.getList();
+
+  const rows = await sql(query);
+
+  return normalizeRowsContent(rows);
+};
+
+/**
+ * Logic hiện tại:
+ *
+ * case 1:
+ * user tồn tại và có bài viết
+ * → lấy bài viết của bạn bè.
+ *
+ * case 2:
+ * user tồn tại nhưng chưa có bài viết
+ * → trả thông tin user và content rỗng.
+ *
+ * case 3:
+ * user không tồn tại
+ * → trả [].
+ */
+export const getListStatusOfOneUser = async (
+  userId
+) => {
+  validateUserId(
+    userId,
+    "getListStatusOfOneUser"
+  );
+
+  const {
+    query: checkQuery,
+    values: checkValues,
+  } =
+    listModel.checkUserIdExistInListAndUser(
+      userId
+    );
+
+  const checkRows = await sql(
+    checkQuery,
+    checkValues
+  );
+
+  const checkResult = Number(
+    checkRows[0]?.result
+  );
+
+  switch (checkResult) {
     case 1: {
-      const { query, values } = listModel.getListStatusAllUserViaId(userId);
+      const {
+        query,
+        values,
+      } =
+        listModel.getListStatusAllUserViaId(
+          userId
+        );
+
       const rows = await sql(query, values);
-      const processedRows = rows.map((row) => {
-        if (row.content === null || row.content === undefined) {
-          return {
-            ...row,
-            content: {},
-          };
-        }
 
-        if (typeof row.content === "string") {
-          try {
-            return {
-              ...row,
-              content: JSON.parse(row.content),
-            };
-          } catch (error) {
-            console.error(`Invalid content JSON at list id ${row.id}:`, error);
-
-            return {
-              ...row,
-              content: {},
-            };
-          }
-        }
-
-        return row;
-      });
-
-      return processedRows;
+      return normalizeRowsContent(rows);
     }
+
     case 2: {
-      const { query, values } =
-        listModel.getListReturnWhenUserIdNotExistInBoth(userId);
+      const {
+        query,
+        values,
+      } =
+        listModel.getListReturnWhenUserIdNotExistInBoth(
+          userId
+        );
+
       const rows = await sql(query, values);
-      const processedRows = rows.map((row) => {
-        if (row.content === null || row.content === undefined) {
-          return {
-            ...row,
-            content: {},
-          };
-        }
 
-        if (typeof row.content === "string") {
-          try {
-            return {
-              ...row,
-              content: JSON.parse(row.content),
-            };
-          } catch (error) {
-            console.error(`Invalid content JSON at list id ${row.id}:`, error);
-
-            return {
-              ...row,
-              content: {},
-            };
-          }
-        }
-
-        return row;
-      });
-
-      return processedRows;
+      return normalizeRowsContent(rows);
     }
+
     default:
       return [];
   }
 };
 
-export const getListUserStatusByUserId = async (userId) => {
-  const { query, values } = listModel.getListStatusOfOneUser(userId);
-  const rows = await sql(query, values);
-  const processedRows = rows.map((row) => {
-    if (row.content === null || row.content === undefined) {
-      return { ...row, content: {} }; // Tạo một object mới với content là {}
-    } else {
-      return row; // Trả về row ban đầu nếu content không null
-    }
-  });
+/**
+ * Lấy toàn bộ bài viết của một user.
+ */
+export const getListUserStatusByUserId = async (
+  userId
+) => {
+  validateUserId(
+    userId,
+    "getListUserStatusByUserId"
+  );
 
-  return processedRows;
+  const { query, values } =
+    listModel.getListStatusOfOneUser(
+      userId
+    );
+
+  const rows = await sql(query, values);
+
+  return normalizeRowsContent(rows);
 };
 
-export const createNewPost = async(userId, content) => {
-    const { query, values } = listModel.createNewPost(userId, content);
-    const rows = await sql(query, values);
-    return rows;
-}
+/**
+ * Tạo bài viết mới.
+ */
+export const createNewPost = async (
+  userId,
+  content
+) => {
+  validateUserId(userId, "createNewPost");
+
+  if (
+    !content ||
+    typeof content !== "object" ||
+    Array.isArray(content)
+  ) {
+    throw new TypeError(
+      "createNewPost: content không hợp lệ."
+    );
+  }
+
+  const { query, values } =
+    listModel.createNewPost(
+      userId,
+      content
+    );
+
+  const rows = await sql(query, values);
+
+  return normalizeRowsContent(rows);
+};
