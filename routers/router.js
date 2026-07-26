@@ -50,6 +50,10 @@ router.post(
 router.put(
   "/update-post/:id",
   checkTokenMiddleware,
+  uploadPostImagesMiddleware.array(
+    "images",
+    10
+  ),
   listController.updatePost
 );
 

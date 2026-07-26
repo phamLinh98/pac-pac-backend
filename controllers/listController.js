@@ -289,20 +289,17 @@ export const uploadPostImages = async (req, res) => {
 /**
  * PUT /update-post/:id
  *
- * Body:
- * {
- *   "userId": 123,
- *   "content": {
- *     "text": "Updated content",
- *     "image": ["posts/123/file1.jpg", "posts/123/file2.jpg"]
- *   },
- *   "oldImageKeys": ["posts/123/oldfile.jpg"]  // Optional: images to delete
- * }
+ * multipart/form-data:
+ * - images: File[] (optional)
+ * - text: string (optional)
+ * - existingImages: JSON string (optional) - existing image keys to keep
+ * - oldImageKeys: JSON string (optional) - images to delete
  *
  * Quy trình:
- * 1. Xoá ảnh cũ không còn dùng
- * 2. Cập nhật nội dung bài viết
- * 3. Trả về bài viết cập nhật với signed URLs
+ * 1. Upload file mới (nếu có)
+ * 2. Xoá ảnh cũ không còn dùng
+ * 3. Cập nhật nội dung bài viết
+ * 4. Trả về bài viết cập nhật với signed URLs
  */
 export const updatePost = async (req, res) => {
   try {
@@ -335,34 +332,51 @@ export const updatePost = async (req, res) => {
       });
     }
 
-    const rawContent = req.body?.content;
-
-    if (
-      !rawContent ||
-      typeof rawContent !== "object" ||
-      Array.isArray(rawContent)
-    ) {
-      return res.status(400).json({
-        message: "content không hợp lệ.",
-      });
-    }
-
-    const text =
-      typeof rawContent.text === "string"
-        ? rawContent.text.trim()
-        : "";
-
-    const image = Array.isArray(rawContent.image)
-      ? rawContent.image
-          .filter(
-            (item) =>
-              typeof item === "string" &&
-              item.trim() !== ""
-          )
-          .map((item) => item.trim())
+    // Xử lý file uploads nếu có
+    const files = Array.isArray(req.files)
+      ? req.files
       : [];
 
-    if (!text && image.length === 0) {
+    let newImageKeys = [];
+    if (files.length > 0) {
+      newImageKeys =
+        await storageService.uploadPostImages(
+          userId,
+          files
+        );
+    }
+
+    // Lấy ảnh hiện có từ body (JSON string)
+    let existingImages = [];
+    if (req.body?.existingImages) {
+      try {
+        const parsed = JSON.parse(
+          req.body.existingImages
+        );
+        existingImages = Array.isArray(parsed)
+          ? parsed
+          : [];
+      } catch (error) {
+        console.error(
+          "Error parsing existingImages:",
+          error
+        );
+      }
+    }
+
+    // Kết hợp ảnh mới + ảnh hiện có
+    const allImages = [
+      ...existingImages,
+      ...newImageKeys,
+    ];
+
+    // Lấy text
+    const text =
+      typeof req.body?.text === "string"
+        ? req.body.text.trim()
+        : "";
+
+    if (!text && allImages.length === 0) {
       return res.status(400).json({
         message:
           "Bài viết phải có nội dung hoặc ít nhất một hình ảnh.",
@@ -371,14 +385,26 @@ export const updatePost = async (req, res) => {
 
     const content = {
       text,
-      image,
+      image: allImages,
     };
 
-    const oldImageKeys = Array.isArray(
-      req.body?.oldImageKeys
-    )
-      ? req.body.oldImageKeys
-      : [];
+    // Lấy danh sách ảnh cũ cần xoá
+    let oldImageKeys = [];
+    if (req.body?.oldImageKeys) {
+      try {
+        const parsed = JSON.parse(
+          req.body.oldImageKeys
+        );
+        oldImageKeys = Array.isArray(parsed)
+          ? parsed
+          : [];
+      } catch (error) {
+        console.error(
+          "Error parsing oldImageKeys:",
+          error
+        );
+      }
+    }
 
     const updatedPosts =
       await listService.updatePost(
