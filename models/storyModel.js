@@ -1,14 +1,22 @@
 export const getStory = () => {
   return `
     SELECT
-      story.*,
-      story.image AS image_key,
+      story.id,
+      story.user_id,
+      story.content,
+      story.image_url,
+      story.expires_at,
+      story.created_at,
+      story.image_url AS image_key,
       user_account.name AS user_name,
-      user_account.avatar
+      COALESCE(story.avatar, user_account.avatar) AS avatar
     FROM story
     JOIN "public"."user" AS user_account
       ON story.user_id = user_account.id
-    WHERE story.created_at > NOW() - INTERVAL '24 hours'
+    WHERE COALESCE(
+      story.expires_at,
+      story.created_at + INTERVAL '24 hours'
+    ) > NOW()
     ORDER BY story.created_at DESC;
   `;
 };
@@ -16,15 +24,31 @@ export const getStory = () => {
 export const createStory = (userId, imageKey) => ({
   query: `
     WITH inserted_story AS (
-      INSERT INTO story (user_id, image, created_at, updated_at)
-      VALUES ($1, $2, NOW(), NOW())
+      INSERT INTO story (
+        user_id,
+        image_url,
+        expires_at,
+        avatar
+      )
+      SELECT
+        $1,
+        $2,
+        NOW() + INTERVAL '24 hours',
+        user_account.avatar
+      FROM "public"."user" AS user_account
+      WHERE user_account.id = $1
       RETURNING *
     )
     SELECT
-      inserted_story.*,
-      inserted_story.image AS image_key,
+      inserted_story.id,
+      inserted_story.user_id,
+      inserted_story.content,
+      inserted_story.image_url,
+      inserted_story.expires_at,
+      inserted_story.created_at,
+      inserted_story.image_url AS image_key,
       user_account.name AS user_name,
-      user_account.avatar
+      COALESCE(inserted_story.avatar, user_account.avatar) AS avatar
     FROM inserted_story
     JOIN "public"."user" AS user_account
       ON inserted_story.user_id = user_account.id;
@@ -36,13 +60,16 @@ export const deleteStory = (storyId, userId) => ({
   query: `
     DELETE FROM story
     WHERE id = $1 AND user_id = $2
-    RETURNING *, image AS image_key;
+    RETURNING *, image_url AS image_key;
   `,
   values: [storyId, userId],
 });
 
 export const deleteExpiredStories = () => `
   DELETE FROM story
-  WHERE created_at <= NOW() - INTERVAL '24 hours'
-  RETURNING *, image AS image_key;
+  WHERE COALESCE(
+    expires_at,
+    created_at + INTERVAL '24 hours'
+  ) <= NOW()
+  RETURNING *, image_url AS image_key;
 `;

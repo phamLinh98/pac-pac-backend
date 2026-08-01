@@ -16,7 +16,7 @@ const attachSignedUrl = async (story) => {
         return story;
     }
 
-    const imageKey = story.image_key ?? story.image;
+    const imageKey = story.image_key ?? story.image_url;
     const imageUrl = isStorageKey(imageKey)
         ? await createSignedObjectUrl(imageKey)
         : imageKey;
@@ -31,7 +31,7 @@ const attachSignedUrl = async (story) => {
 const deleteStoryImages = async (stories) => {
     await Promise.allSettled(
         stories
-            .map((story) => story?.image_key ?? story?.image)
+            .map((story) => story?.image_key ?? story?.image_url)
             .filter(isStorageKey)
             .map((imageKey) => deleteObjectFromStorage(imageKey))
     );
