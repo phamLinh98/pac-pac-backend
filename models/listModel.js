@@ -120,6 +120,34 @@ export const getListReturnWhenUserIdNotExistInBoth =
     };
   };
 
+export const getListUserIdWithEmptyContent = (userId) => {
+  const query = `
+    SELECT
+      u.id,
+      u.id AS user_id,
+      '{}'::jsonb AS content,
+      0 AS comment,
+      0 AS "like",
+      0 AS shared,
+      false AS likestatus,
+      NULL::timestamptz AS created_at,
+      NULL::timestamptz AS updated_at,
+      u.namecode,
+      u.name,
+      u.avatar,
+      u.friends
+    FROM public."user" u
+    WHERE u.id = $1;
+  `;
+
+  const values = [userId];
+
+  return {
+    query,
+    values,
+  };
+};
+
 /**
  * Kiểm tra user tồn tại và có post hay không.
  *

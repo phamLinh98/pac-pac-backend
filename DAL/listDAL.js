@@ -163,7 +163,21 @@ export const getListUserStatusByUserId = async (
 
   const rows = await sql(query, values);
 
-  return normalizeRowsContent(rows);
+  if (Array.isArray(rows) && rows.length > 0) {
+    return normalizeRowsContent(rows);
+  }
+
+  const {
+    query: fallbackQuery,
+    values: fallbackValues,
+  } = listModel.getListUserIdWithEmptyContent(userId);
+
+  const fallbackRows = await sql(
+    fallbackQuery,
+    fallbackValues
+  );
+
+  return normalizeRowsContent(fallbackRows);
 };
 
 /**

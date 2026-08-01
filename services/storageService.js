@@ -305,10 +305,23 @@ export const attachSignedUrlsToPost =
       return post;
     }
 
+    const rawContent = post.content;
+
+    if (
+      rawContent &&
+      typeof rawContent === "object" &&
+      !Array.isArray(rawContent) &&
+      Object.keys(rawContent).length === 0
+    ) {
+      return {
+        ...post,
+        content: {},
+        imageKeys: [],
+      };
+    }
+
     const normalizedContent =
-      normalizeContent(
-        post.content
-      );
+      normalizeContent(rawContent);
 
     const originalImageKeys =
       normalizedContent.image;
