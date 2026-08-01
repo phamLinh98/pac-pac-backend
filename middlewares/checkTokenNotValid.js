@@ -40,9 +40,9 @@ export const checkTokenMiddleware = (req, res, next) => {
         const decoded = jwt.verify(refreshToken, envConfig.refeshSecretKey);
         
         // Cấp phát accessToken mới
-        const { id, name, email, avatar, namecode, friends } = decoded;
+        const { id, name, email, avatar, namecode, list_friend_id } = decoded;
         const newAccessToken = jwt.sign(
-          { id, name, email, avatar, namecode, friends },
+          { id, name, email, avatar, namecode, list_friend_id },
           envConfig.accessSecretKey,
           { expiresIn: '1h' }
         );

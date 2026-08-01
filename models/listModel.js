@@ -74,7 +74,7 @@ export const getListStatusOfOneUser = (
        friend_user.namecode,
        friend_user.name,
        friend_user.avatar,
-       friend_user.friends
+       friend_user.list_friend_id
      FROM public."user" AS cu
      JOIN list AS l
        ON l.user_id = ANY(

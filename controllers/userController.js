@@ -101,9 +101,9 @@ export const refreshTokenWhenExpired = async (req, res) => {
                 return res.status(403).json({ message: 'Refresh token không hợp lệ' });
             }
             // TODO2: Cấp phát accessToken mới
-            const { id, name, email, avatar, namecode, friends, iat } = decoded
+            const { id, name, email, avatar, namecode, list_friend_id, iat } = decoded
             const newAccessToken = jwt.sign(
-                { id, name, email, avatar, namecode, friends, iat },
+                { id, name, email, avatar, namecode, list_friend_id, iat },
                 envConfig.accessSecretKey,
                 { expiresIn: '1h' } // Access token có thời gian sống 1h
             );
