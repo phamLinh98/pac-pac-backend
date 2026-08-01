@@ -203,32 +203,44 @@ export const updateAddFriend = async (req, res) => {
 
 export const sendFriendRequest = async (req, res) => {
     try {
-        const { userIdFirst, userIdSecond } = req.body;
+        const { userIdFirst, userIdSecond } = req.body ?? {};
 
-        if (!userIdFirst || !userIdSecond) {
+        if (userIdFirst === undefined || userIdSecond === undefined) {
             return res.status(400).json({
-                message: "Thiếu userIdFirst hoặc userIdSecond"
+                message: "Thiếu userIdFirst hoặc userIdSecond",
+                receivedBody: req.body,
             });
         }
 
-        if (userIdFirst === userIdSecond) {
+        const firstId = Number(userIdFirst);
+        const secondId = Number(userIdSecond);
+
+        if (!Number.isInteger(firstId) || !Number.isInteger(secondId)) {
             return res.status(400).json({
-                message: "Không thể gửi lời mời kết bạn cho chính mình"
+                message: "userIdFirst và userIdSecond phải là số nguyên",
+            });
+        }
+
+        if (firstId === secondId) {
+            return res.status(400).json({
+                message: "Không thể gửi lời mời kết bạn cho chính mình",
             });
         }
 
         const result = await userService.sendFriendRequest(
-            userIdFirst,
-            userIdSecond
+            firstId,
+            secondId
         );
 
         return res.status(200).json({
-            message: "Yêu cầu kết bạn đã được gửi",
+            message:
+                result?.status === "accepted"
+                    ? "Hai người đã trở thành bạn bè"
+                    : "Yêu cầu kết bạn đã được gửi",
             result,
         });
-
     } catch (error) {
-        console.error(error);
+        console.error("sendFriendRequest error:", error);
 
         return res.status(500).json({
             message: "Internal Server Error",

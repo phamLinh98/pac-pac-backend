@@ -27,7 +27,7 @@ router.get('/list-friend/:id', userController.getListFriendViaUserId);
 router.post('/register', userController.createNewUser)
 router.put('/user/:id', userController.updateAvatarOfUser);
 router.put('/update-add-friend/:id/:id2', checkTokenMiddleware, userController.updateAddFriend);
-router.post("/send-friend-request/:userIdFirst/:userIdSecond", checkTokenMiddleware, userController.sendFriendRequest);
+router.post("/send-friend-request", checkTokenMiddleware, userController.sendFriendRequest);
 
 router.post("/add-comment/:userId/:listId", checkTokenMiddleware, commentController.addComment);
 router.post('/add-post', checkTokenMiddleware, listController.createNewPost);
