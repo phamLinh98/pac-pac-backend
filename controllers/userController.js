@@ -205,7 +205,10 @@ export const sendFriendRequest = async (req, res) => {
     try {
         const { userIdFirst, userIdSecond } = req.body ?? {};
 
-        if (userIdFirst === undefined || userIdSecond === undefined) {
+        if (
+            userIdFirst === undefined ||
+            userIdSecond === undefined
+        ) {
             return res.status(400).json({
                 message: "Thiếu userIdFirst hoặc userIdSecond",
                 receivedBody: req.body,
@@ -215,32 +218,73 @@ export const sendFriendRequest = async (req, res) => {
         const firstId = Number(userIdFirst);
         const secondId = Number(userIdSecond);
 
-        if (!Number.isInteger(firstId) || !Number.isInteger(secondId)) {
+        if (
+            !Number.isInteger(firstId) ||
+            !Number.isInteger(secondId) ||
+            firstId <= 0 ||
+            secondId <= 0
+        ) {
             return res.status(400).json({
-                message: "userIdFirst và userIdSecond phải là số nguyên",
+                message:
+                    "userIdFirst và userIdSecond phải là số nguyên dương",
             });
         }
 
         if (firstId === secondId) {
             return res.status(400).json({
-                message: "Không thể gửi lời mời kết bạn cho chính mình",
+                message:
+                    "Không thể gửi lời mời kết bạn cho chính mình",
             });
         }
 
-        const result = await userService.sendFriendRequest(
-            firstId,
-            secondId
-        );
+        const result =
+            await userService.sendFriendRequest(
+                firstId,
+                secondId
+            );
+
+        const friendRequest =
+            Array.isArray(result)
+                ? result[0] ?? null
+                : result ?? null;
+
+        if (!friendRequest) {
+            return res.status(500).json({
+                message:
+                    "Không nhận được kết quả lời mời kết bạn",
+            });
+        }
+
+        const status =
+            typeof friendRequest.status === "string"
+                ? friendRequest.status
+                    .trim()
+                    .toLowerCase()
+                : null;
+
+        let updateFriendResult = null;
+
+        if (status === "accepted") {
+            updateFriendResult =
+                await userService.updateListFriend(
+                    firstId,
+                    secondId
+                );
+        }
 
         return res.status(200).json({
             message:
-                result?.status === "accepted"
+                status === "accepted"
                     ? "Hai người đã trở thành bạn bè"
                     : "Yêu cầu kết bạn đã được gửi",
             result,
+            updateFriendResult,
         });
     } catch (error) {
-        console.error("sendFriendRequest error:", error);
+        console.error(
+            "sendFriendRequest error:",
+            error
+        );
 
         return res.status(500).json({
             message: "Internal Server Error",
