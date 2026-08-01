@@ -88,7 +88,20 @@ export const updateAvatar = (userId, avatar) => {
 
 export const getListSendFriend = (userId) => {
   const query = `
-   SELECT * FROM friendships_send WHERE user_id_second= $1`;
+    SELECT
+      friend_request.*,
+      sender.name AS sender_name,
+      sender.avatar AS sender_avatar,
+      receiver.name AS receiver_name,
+      receiver.avatar AS receiver_avatar
+    FROM "public"."friend_requests" AS friend_request
+    JOIN "public"."user" AS sender
+      ON sender.id = friend_request.sender_id
+    JOIN "public"."user" AS receiver
+      ON receiver.id = friend_request.receiver_id
+    WHERE friend_request.sender_id = $1::BIGINT
+       OR friend_request.receiver_id = $1::BIGINT
+    ORDER BY friend_request.updated_at DESC`;
   const values = [userId];
   return { query, values };
 };

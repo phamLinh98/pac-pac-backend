@@ -180,7 +180,17 @@ export const updateAvatarOfUser = async (req, res) => {
 
 export const getListSendFriend = async (req, res) => {
     try {
-        const userId = req.params.id; // Lấy userId từ req.params
+        const userId = Number(req.params.id);
+        const loginUserId = Number(req.checkAccessToken?.id);
+
+        if (!Number.isInteger(userId) || userId <= 0) {
+            return res.status(400).json({ message: "User id không hợp lệ" });
+        }
+
+        if (userId !== loginUserId) {
+            return res.status(403).json({ message: "Không có quyền xem lời mời kết bạn của user khác" });
+        }
+
         const listSendFriend = await userService.getListSendFriend(userId);
         return res.status(200).json(listSendFriend);
     } catch (error) {
