@@ -47,7 +47,7 @@ export const getListStatusOfOneUser = (
       u.namecode,
       u.name,
       u.avatar,
-      u.friends
+      u.list_friend_id
     FROM list l
     JOIN public."user" u
       ON l.user_id = u.id
@@ -106,7 +106,7 @@ export const getListReturnWhenUserIdNotExistInBoth =
         name,
         namecode,
         avatar,
-        friends,
+        list_friend_id,
         '{}'::jsonb AS content
       FROM public."user"
       WHERE id = $1;
@@ -135,7 +135,7 @@ export const getListUserIdWithEmptyContent = (userId) => {
       u.namecode,
       u.name,
       u.avatar,
-      u.friends
+      u.list_friend_id
     FROM public."user" u
     WHERE u.id = $1;
   `;
