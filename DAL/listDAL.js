@@ -74,13 +74,9 @@ export const getList = async () => {
 /**
  * Logic hiện tại:
  *
- * case 1:
- * user tồn tại và có bài viết
+ * case 1 hoặc 2:
+ * user tồn tại, bất kể đã có bài viết hay chưa
  * → lấy bài viết của bạn bè.
- *
- * case 2:
- * user tồn tại nhưng chưa có bài viết
- * → trả thông tin user và content rỗng.
  *
  * case 3:
  * user không tồn tại
@@ -112,26 +108,13 @@ export const getListStatusOfOneUser = async (
   );
 
   switch (checkResult) {
-    case 1: {
-      const {
-        query,
-        values,
-      } =
-        listModel.getListStatusAllUserViaId(
-          userId
-        );
-
-      const rows = await sql(query, values);
-
-      return normalizeRowsContent(rows);
-    }
-
+    case 1:
     case 2: {
       const {
         query,
         values,
       } =
-        listModel.getListReturnWhenUserIdNotExistInBoth(
+        listModel.getListStatusAllUserViaId(
           userId
         );
 

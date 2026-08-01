@@ -21,9 +21,8 @@ export const getList = async (req, res) => {
 /**
  * GET /list/:id
  *
- * Logic hiện tại:
- * - Nếu user có bài viết: lấy bài viết của bạn bè user đó.
- * - Nếu user tồn tại nhưng chưa có bài viết: trả thông tin user.
+ * Nếu user tồn tại, lấy bài viết của bạn bè user đó,
+ * bất kể user hiện tại đã có bài viết hay chưa.
  */
 export const getListStatusOfOneUser = async (req, res) => {
   try {
