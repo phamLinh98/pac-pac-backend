@@ -91,3 +91,25 @@ export const updateAddFriend = async (userId, userId2) => {
         throw error;
     }
 }
+
+export const updateListFriend = async (userId, userId2) => {
+    try {
+        const result = await userDAL.updateListFriend(userId, userId2);
+        return result;
+    }
+    catch (error) {
+        console.log('error', error);
+        throw error;
+    }
+}
+
+export const sendFriendRequest = async (userId, userId2) => {
+    try {
+        const result = await userDAL.sendFriendRequest(userId, userId2);
+        return result;
+    }
+    catch (error) {
+        console.log('error', error);
+        throw error;
+    }
+}

@@ -47,8 +47,8 @@ export const loginUserByEmailAndPassword = async (req, res) => {
             secure: true // Important when using sameSite: 'none'
         });
 
-        return res.status(200).json({ 
-            message: 'Login successful', 
+        return res.status(200).json({
+            message: 'Login successful',
             token: result.tokenForClient,
             accessToken: result.accessToken,
             refreshToken: result.refreshToken
@@ -83,7 +83,7 @@ export const refreshTokenWhenExpired = async (req, res) => {
     try {
         // TODO1: Kiểm tra xem refreshToken có trong cookie hay Authorization header
         let refreshToken = req.signedCookies?.refreshToken;
-        
+
         // Nếu không có trong cookie, kiểm tra Authorization header
         if (!refreshToken) {
             const authHeader = req.headers.authorization;
@@ -91,7 +91,7 @@ export const refreshTokenWhenExpired = async (req, res) => {
                 refreshToken = authHeader.slice(7);
             }
         }
-        
+
         if (!refreshToken) {
             return res.status(405).json({ message: 'Bạn chưa có refeshToken, yêu cầu đăng nhập lại' });
         }
@@ -141,40 +141,40 @@ export const getListFriendViaUserId = async (req, res) => {
     }
 }
 
-export const getUserFriendOfLoginUser = async(req,res) => {
+export const getUserFriendOfLoginUser = async (req, res) => {
     try {
-       const userId = req.params.id;
-       const getUserFriendOfLoginUser = await userService.getUserFriendOfLoginUser(userId);
-       return res.status(200).json(getUserFriendOfLoginUser); 
-    }catch(error){
+        const userId = req.params.id;
+        const getUserFriendOfLoginUser = await userService.getUserFriendOfLoginUser(userId);
+        return res.status(200).json(getUserFriendOfLoginUser);
+    } catch (error) {
         console.log('error', error);
     }
 }
 
 
-export const createNewUser = async(req, res) => {
-    try{
-        const {name, email, password} = req.body;
-        if(!name || !email || !password){
-            return res.status(400).json({error: "Name, email and password are required"});
+export const createNewUser = async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+        if (!name || !email || !password) {
+            return res.status(400).json({ error: "Name, email and password are required" });
         }
         const createNewUser = await userService.createNewUser(name, email, password);
-        return res.status(200).json({message: "Create new user successfully", createNewUser});
-    }catch(error){
+        return res.status(200).json({ message: "Create new user successfully", createNewUser });
+    } catch (error) {
         console.log('error', error);
-        return res.status(500).json({error: "Internal Server Error"});
+        return res.status(500).json({ error: "Internal Server Error" });
     }
 };
 
-export const updateAvatarOfUser = async(req, res) => {
-    try{
+export const updateAvatarOfUser = async (req, res) => {
+    try {
         const userId = req.params.id;
-        const {avatar} = req.body;
+        const { avatar } = req.body;
         const updatedUser = await userService.updateAvatarOfUser(userId, avatar);
-        return res.status(200).json({message: "Update avatar successfully", updatedUser});
-    }catch(error){
+        return res.status(200).json({ message: "Update avatar successfully", updatedUser });
+    } catch (error) {
         console.log('error', error);
-        return res.status(500).json({error: "Internal Server Error"});
+        return res.status(500).json({ error: "Internal Server Error" });
     }
 };
 
@@ -191,7 +191,7 @@ export const getListSendFriend = async (req, res) => {
 
 export const updateAddFriend = async (req, res) => {
     try {
-        const userIdSecond = req.params.id; 
+        const userIdSecond = req.params.id;
         const userIdFirst = req.params.id2;
         const result = await userService.updateAddFriend(userIdFirst, userIdSecond);
         return res.status(200).json({ message: "Yêu cầu kết bạn đã được gửi", result });
@@ -200,3 +200,38 @@ export const updateAddFriend = async (req, res) => {
         return res.status(500).json({ error: "Internal Server Error" });
     }
 }
+
+export const sendFriendRequest = async (req, res) => {
+    try {
+        const { userIdFirst, userIdSecond } = req.body;
+
+        if (!userIdFirst || !userIdSecond) {
+            return res.status(400).json({
+                message: "Thiếu userIdFirst hoặc userIdSecond"
+            });
+        }
+
+        if (userIdFirst === userIdSecond) {
+            return res.status(400).json({
+                message: "Không thể gửi lời mời kết bạn cho chính mình"
+            });
+        }
+
+        const result = await userService.sendFriendRequest(
+            userIdFirst,
+            userIdSecond
+        );
+
+        return res.status(200).json({
+            message: "Yêu cầu kết bạn đã được gửi",
+            result,
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        return res.status(500).json({
+            message: "Internal Server Error",
+        });
+    }
+};

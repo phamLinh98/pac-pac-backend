@@ -114,3 +114,94 @@ COMMIT;
   const values = [userId, userId2];
   return { query, values };
 };
+
+export const updateListFriend = (userId, userId2) => {
+  const query = `
+    WITH update_first_user AS (
+      UPDATE "public"."user"
+      SET 
+        list_friend_id = array_append(
+          COALESCE(list_friend_id, ARRAY[]::BIGINT[]),
+          $2::BIGINT
+        ),
+        updated_at = NOW()
+      WHERE id = $1
+        AND NOT (
+          $2::BIGINT = ANY(
+            COALESCE(list_friend_id, ARRAY[]::BIGINT[])
+          )
+        )
+      RETURNING id
+    ),
+    update_second_user AS (
+      UPDATE "public"."user"
+      SET 
+        list_friend_id = array_append(
+          COALESCE(list_friend_id, ARRAY[]::BIGINT[]),
+          $1::BIGINT
+        ),
+        updated_at = NOW()
+      WHERE id = $2
+        AND NOT (
+          $1::BIGINT = ANY(
+            COALESCE(list_friend_id, ARRAY[]::BIGINT[])
+          )
+        )
+      RETURNING id
+    )
+    SELECT
+      EXISTS(SELECT 1 FROM update_first_user) AS first_user_updated,
+      EXISTS(SELECT 1 FROM update_second_user) AS second_user_updated;
+  `;
+
+  const values = [userId, userId2];
+
+  return { query, values };
+};
+
+
+export const sendFriendRequest = (senderId, receiverId) => {
+  const query = `
+    INSERT INTO "public"."friend_requests" (
+      user_low_id,
+      user_high_id,
+      sender_id,
+      receiver_id,
+      status,
+      created_at,
+      updated_at
+    )
+    VALUES (
+      LEAST($1::BIGINT, $2::BIGINT),
+      GREATEST($1::BIGINT, $2::BIGINT),
+      $1::BIGINT,
+      $2::BIGINT,
+      'pending',
+      NOW(),
+      NOW()
+    )
+    ON CONFLICT (user_low_id, user_high_id)
+    DO UPDATE SET
+      status = CASE
+        WHEN "friend_requests".status = 'pending'
+          AND "friend_requests".sender_id = EXCLUDED.receiver_id
+          AND "friend_requests".receiver_id = EXCLUDED.sender_id
+        THEN 'accepted'
+        ELSE "friend_requests".status
+      END,
+      updated_at = NOW()
+    RETURNING
+      id,
+      user_low_id,
+      user_high_id,
+      sender_id,
+      receiver_id,
+      status,
+      created_at,
+      updated_at;
+  `;
+
+  const values = [senderId, receiverId];
+
+  return { query, values };
+};
