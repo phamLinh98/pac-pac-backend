@@ -13,7 +13,15 @@ const router = express.Router();
 router.get('/list', checkTokenMiddleware, listController.getList);
 router.get('/list/:id', checkTokenMiddleware, listController.getListStatusOfOneUser);
 router.get('/list-user/:id', checkTokenMiddleware, listController.getListUserStatusByUserId);
-router.get('/story', storyController.getStory);
+router.get('/story', checkTokenMiddleware, storyController.getStory);
+router.post(
+  '/story',
+  checkTokenMiddleware,
+  uploadPostImagesMiddleware.single('image'),
+  storyController.createStory
+);
+router.delete('/story/expired', checkTokenMiddleware, storyController.deleteExpiredStories);
+router.delete('/story/:id', checkTokenMiddleware, storyController.deleteStory);
 router.get('/comment', checkTokenMiddleware, commentController.getComment);
 router.get('/comment/:id', checkTokenMiddleware, commentController.getCommentByListId);
 router.get('/send-friend/:id', checkTokenMiddleware, userController.getListSendFriend);

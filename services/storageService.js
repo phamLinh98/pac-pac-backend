@@ -182,6 +182,46 @@ const createPostImageKey = (
   ].join("/");
 };
 
+const createStoryImageKey = (
+  userId,
+  file
+) => {
+  const extension = getFileExtension(file);
+
+  return [
+    "stories",
+    userId,
+    `${Date.now()}-${crypto.randomUUID()}${extension}`,
+  ].join("/");
+};
+
+export const uploadStoryImage = async (
+  userId,
+  file
+) => {
+  if (!Number.isInteger(Number(userId)) || Number(userId) <= 0) {
+    throw new Error("userId không hợp lệ.");
+  }
+
+  if (!file?.buffer) {
+    throw new Error("Không có dữ liệu ảnh story.");
+  }
+
+  const key = createStoryImageKey(userId, file);
+
+  await uploadObjectToStorage({
+    key,
+    body: file.buffer,
+    contentType: file.mimetype,
+    metadata: {
+      userId: String(userId),
+      type: "story",
+    },
+  });
+
+  return key;
+};
+
 export const uploadPostImages =
   async (userId, files) => {
     if (
