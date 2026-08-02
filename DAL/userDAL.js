@@ -98,4 +98,8 @@ export const sendFriendRequest = async (userId, userId2) => {
     return rows;
 }
 
+export const cancelFriendship = async (userId, friendId) => {
+    const { query, values } = userModel.cancelFriendship(userId, friendId);
+    return sql(query, values);
+}
 

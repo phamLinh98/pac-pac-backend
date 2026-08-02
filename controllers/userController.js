@@ -301,3 +301,34 @@ export const sendFriendRequest = async (req, res) => {
         });
     }
 };
+
+export const cancelFriendship = async (req, res) => {
+    try {
+        const userId = Number(req.checkAccessToken?.id);
+        const friendId = Number(req.params.id);
+
+        if (
+            !Number.isInteger(userId) ||
+            !Number.isInteger(friendId) ||
+            userId <= 0 ||
+            friendId <= 0 ||
+            userId === friendId
+        ) {
+            return res.status(400).json({ message: "User id không hợp lệ" });
+        }
+
+        const result = await userService.cancelFriendship(userId, friendId);
+
+        if (!Array.isArray(result) || result.length === 0) {
+            return res.status(409).json({ message: "Hai user hiện không phải bạn bè" });
+        }
+
+        return res.status(200).json({
+            message: "Đã hủy kết bạn",
+            result,
+        });
+    } catch (error) {
+        console.error("cancelFriendship error:", error);
+        return res.status(500).json({ message: "Không thể hủy kết bạn" });
+    }
+};

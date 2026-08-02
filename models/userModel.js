@@ -195,7 +195,19 @@ export const sendFriendRequest = (senderId, receiverId) => {
     )
     ON CONFLICT (user_low_id, user_high_id)
     DO UPDATE SET
+      sender_id = CASE
+        WHEN COALESCE("friend_requests".status, '') = ''
+          THEN EXCLUDED.sender_id
+        ELSE "friend_requests".sender_id
+      END,
+      receiver_id = CASE
+        WHEN COALESCE("friend_requests".status, '') = ''
+          THEN EXCLUDED.receiver_id
+        ELSE "friend_requests".receiver_id
+      END,
       status = CASE
+        WHEN COALESCE("friend_requests".status, '') = ''
+          THEN 'pending'
         WHEN "friend_requests".status = 'pending'
           AND "friend_requests".sender_id = EXCLUDED.receiver_id
           AND "friend_requests".receiver_id = EXCLUDED.sender_id
@@ -218,3 +230,47 @@ export const sendFriendRequest = (senderId, receiverId) => {
 
   return { query, values };
 };
+
+export const cancelFriendship = (userId, friendId) => ({
+  query: `
+    WITH updated_request AS (
+      UPDATE "public"."friend_requests"
+      SET status = '', updated_at = NOW()
+      WHERE user_low_id = LEAST($1::BIGINT, $2::BIGINT)
+        AND user_high_id = GREATEST($1::BIGINT, $2::BIGINT)
+        AND status = 'accepted'
+      RETURNING id, status
+    ),
+    update_current_user AS (
+      UPDATE "public"."user"
+      SET
+        list_friend_id = array_remove(
+          COALESCE(list_friend_id, ARRAY[]::BIGINT[]),
+          $2::BIGINT
+        ),
+        updated_at = NOW()
+      WHERE id = $1
+        AND EXISTS (SELECT 1 FROM updated_request)
+      RETURNING id
+    ),
+    update_friend_user AS (
+      UPDATE "public"."user"
+      SET
+        list_friend_id = array_remove(
+          COALESCE(list_friend_id, ARRAY[]::BIGINT[]),
+          $1::BIGINT
+        ),
+        updated_at = NOW()
+      WHERE id = $2
+        AND EXISTS (SELECT 1 FROM updated_request)
+      RETURNING id
+    )
+    SELECT
+      updated_request.id,
+      updated_request.status,
+      EXISTS(SELECT 1 FROM update_current_user) AS current_user_updated,
+      EXISTS(SELECT 1 FROM update_friend_user) AS friend_user_updated
+    FROM updated_request;
+  `,
+  values: [userId, friendId],
+});

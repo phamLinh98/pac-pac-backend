@@ -113,3 +113,7 @@ export const sendFriendRequest = async (userId, userId2) => {
         throw error;
     }
 }
+
+export const cancelFriendship = async (userId, friendId) => {
+    return userDAL.cancelFriendship(userId, friendId);
+}
