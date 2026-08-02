@@ -132,12 +132,18 @@ export const refreshTokenWhenExpired = async (req, res) => {
 
 export const getListFriendViaUserId = async (req, res) => {
     try {
-        const userId = req.params.id;
+        const userId = Number(req.params.id);
+
+        if (!Number.isInteger(userId) || userId <= 0) {
+            return res.status(400).json({ message: "User id không hợp lệ" });
+        }
+
         const getListFriendViaUserId = await userService.getListFriendViaUserId(userId);
         return res.status(200).json(getListFriendViaUserId);
     }
     catch (error) {
-        console.log('error', error);
+        console.error('getListFriendViaUserId error:', error);
+        return res.status(500).json({ message: "Không thể tải danh sách bạn bè" });
     }
 }
 

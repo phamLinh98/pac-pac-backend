@@ -43,7 +43,22 @@ export const saveRefeshToken = (userId, token) => {
 
 export const getListFriendViaUserId = (userId) => {
   const query = `
-   SELECT * from list_friend where user_id = $1`;
+    SELECT
+      friend_account.id,
+      friend_account.name,
+      friend_account.email,
+      friend_account.avatar,
+      friend_account.namecode,
+      friend_account.list_friend_id
+    FROM "public"."user" AS profile_user
+    CROSS JOIN LATERAL unnest(
+      COALESCE(profile_user.list_friend_id, ARRAY[]::BIGINT[])
+    ) AS friend_id(id)
+    JOIN "public"."user" AS friend_account
+      ON friend_account.id = friend_id.id
+    WHERE profile_user.id = $1
+    ORDER BY friend_account.name ASC;
+  `;
   const values = [userId];
   return { query, values };
 };

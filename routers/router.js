@@ -31,7 +31,7 @@ router.get('/user/:id', checkTokenMiddleware, userController.getUserFriendOfLogi
 router.post('/login', userController.loginUserByEmailAndPassword);
 router.get('/logout', userController.logoutAndRemoveAllToken);
 router.get('/refesh-token', userController.refreshTokenWhenExpired);
-router.get('/list-friend/:id', userController.getListFriendViaUserId);
+router.get('/list-friend/:id', checkTokenMiddleware, userController.getListFriendViaUserId);
 router.post('/register', userController.createNewUser)
 router.put('/user/:id', userController.updateAvatarOfUser);
 router.put('/update-add-friend/:id/:id2', checkTokenMiddleware, userController.updateAddFriend);
