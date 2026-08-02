@@ -28,6 +28,7 @@ router.get('/send-friend/:id', checkTokenMiddleware, userController.getListSendF
 
 //Test
 router.get('/user/:id', checkTokenMiddleware, userController.getUserFriendOfLoginUser);
+router.get('/search-user', checkTokenMiddleware, userController.searchUsers);
 router.post('/login', userController.loginUserByEmailAndPassword);
 router.get('/logout', userController.logoutAndRemoveAllToken);
 router.get('/refesh-token', userController.refreshTokenWhenExpired);

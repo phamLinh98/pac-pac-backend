@@ -157,6 +157,23 @@ export const getUserFriendOfLoginUser = async (req, res) => {
     }
 }
 
+export const searchUsers = async (req, res) => {
+    try {
+        const keyword = String(req.query.q ?? '').trim().slice(0, 100);
+        const loginUserId = Number(req.checkAccessToken?.id);
+
+        if (!keyword) {
+            return res.status(200).json([]);
+        }
+
+        const users = await userService.searchUsers(keyword, loginUserId);
+        return res.status(200).json(users);
+    } catch (error) {
+        console.error('searchUsers error:', error);
+        return res.status(500).json({ message: 'Không thể tìm kiếm user' });
+    }
+}
+
 
 export const createNewUser = async (req, res) => {
     try {

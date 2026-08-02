@@ -49,6 +49,10 @@ export const getUserFriendOfLoginUser = async (userId) => {
     }
 }
 
+export const searchUsers = async (keyword, loginUserId) => {
+    return userDAL.searchUsers(keyword, loginUserId);
+}
+
 export const createNewUser = async (name, email, password) => {
     try {
         // Tạo user trước

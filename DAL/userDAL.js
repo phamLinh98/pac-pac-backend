@@ -56,6 +56,11 @@ export const getUserFriendOfLoginUser = async(userId) => {
     return rows;
 }
 
+export const searchUsers = async (keyword, loginUserId) => {
+    const { query, values } = userModel.searchUsers(keyword, loginUserId);
+    return sql(query, values);
+}
+
 export const createNewUser = async(name, email, password) => {
     const {query, values} = userModel.createNewUser(name, email, password);
     const rows = await sql(query, values);

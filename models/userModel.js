@@ -71,6 +71,26 @@ export const getUserFriendOfLoginUser = (userId) => {
   return { query, values };
 };
 
+export const searchUsers = (keyword, loginUserId) => ({
+  query: `
+    SELECT id, name, avatar, namecode
+    FROM "public"."user"
+    WHERE id <> $2
+      AND (
+        name ILIKE '%' || $1 || '%'
+        OR COALESCE(namecode, '') ILIKE '%' || $1 || '%'
+      )
+    ORDER BY
+      CASE
+        WHEN name ILIKE $1 || '%' THEN 0
+        ELSE 1
+      END,
+      name ASC
+    LIMIT 10;
+  `,
+  values: [keyword, loginUserId],
+});
+
 export const createNewUser = (name, email, password) => {
   const query = `
     WITH new_user AS (
