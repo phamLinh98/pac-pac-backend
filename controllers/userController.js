@@ -332,3 +332,41 @@ export const cancelFriendship = async (req, res) => {
         return res.status(500).json({ message: "Không thể hủy kết bạn" });
     }
 };
+
+export const cancelFriendRequest = async (req, res) => {
+    try {
+        const senderId = Number(req.checkAccessToken?.id);
+        const receiverId = Number(req.params.id);
+
+        if (
+            !Number.isInteger(senderId) ||
+            !Number.isInteger(receiverId) ||
+            senderId <= 0 ||
+            receiverId <= 0 ||
+            senderId === receiverId
+        ) {
+            return res.status(400).json({ message: "User id không hợp lệ" });
+        }
+
+        const result = await userService.cancelFriendRequest(
+            senderId,
+            receiverId
+        );
+
+        if (!Array.isArray(result) || result.length === 0) {
+            return res.status(409).json({
+                message: "Không tìm thấy lời mời đang chờ do bạn gửi",
+            });
+        }
+
+        return res.status(200).json({
+            message: "Đã hủy yêu cầu kết bạn",
+            result,
+        });
+    } catch (error) {
+        console.error("cancelFriendRequest error:", error);
+        return res.status(500).json({
+            message: "Không thể hủy yêu cầu kết bạn",
+        });
+    }
+};

@@ -274,3 +274,22 @@ export const cancelFriendship = (userId, friendId) => ({
   `,
   values: [userId, friendId],
 });
+
+export const cancelFriendRequest = (senderId, receiverId) => ({
+  query: `
+    UPDATE "public"."friend_requests"
+    SET status = 'cancelled', updated_at = NOW()
+    WHERE user_low_id = LEAST($1::BIGINT, $2::BIGINT)
+      AND user_high_id = GREATEST($1::BIGINT, $2::BIGINT)
+      AND sender_id = $1
+      AND receiver_id = $2
+      AND status = 'pending'
+    RETURNING
+      id,
+      sender_id,
+      receiver_id,
+      status,
+      updated_at;
+  `,
+  values: [senderId, receiverId],
+});

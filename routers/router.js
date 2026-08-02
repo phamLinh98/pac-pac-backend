@@ -37,6 +37,7 @@ router.put('/user/:id', userController.updateAvatarOfUser);
 router.put('/update-add-friend/:id/:id2', checkTokenMiddleware, userController.updateAddFriend);
 router.post("/send-friend-request", checkTokenMiddleware, userController.sendFriendRequest);
 router.delete("/friendship/:id", checkTokenMiddleware, userController.cancelFriendship);
+router.delete("/friend-request/:id", checkTokenMiddleware, userController.cancelFriendRequest);
 
 router.post("/add-comment/:userId/:listId", checkTokenMiddleware, commentController.addComment);
 router.post('/add-post', checkTokenMiddleware, listController.createNewPost);
