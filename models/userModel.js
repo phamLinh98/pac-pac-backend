@@ -196,17 +196,17 @@ export const sendFriendRequest = (senderId, receiverId) => {
     ON CONFLICT (user_low_id, user_high_id)
     DO UPDATE SET
       sender_id = CASE
-        WHEN COALESCE("friend_requests".status, '') = ''
+        WHEN COALESCE("friend_requests".status, '') IN ('', 'cancelled', 'rejected')
           THEN EXCLUDED.sender_id
         ELSE "friend_requests".sender_id
       END,
       receiver_id = CASE
-        WHEN COALESCE("friend_requests".status, '') = ''
+        WHEN COALESCE("friend_requests".status, '') IN ('', 'cancelled', 'rejected')
           THEN EXCLUDED.receiver_id
         ELSE "friend_requests".receiver_id
       END,
       status = CASE
-        WHEN COALESCE("friend_requests".status, '') = ''
+        WHEN COALESCE("friend_requests".status, '') IN ('', 'cancelled', 'rejected')
           THEN 'pending'
         WHEN "friend_requests".status = 'pending'
           AND "friend_requests".sender_id = EXCLUDED.receiver_id
@@ -235,7 +235,7 @@ export const cancelFriendship = (userId, friendId) => ({
   query: `
     WITH updated_request AS (
       UPDATE "public"."friend_requests"
-      SET status = '', updated_at = NOW()
+      SET status = 'cancelled', updated_at = NOW()
       WHERE user_low_id = LEAST($1::BIGINT, $2::BIGINT)
         AND user_high_id = GREATEST($1::BIGINT, $2::BIGINT)
         AND status = 'accepted'
