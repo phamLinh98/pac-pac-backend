@@ -195,6 +195,47 @@ const createStoryImageKey = (
   ].join("/");
 };
 
+const createProfileImageKey = (userId, imageType, file) => [
+  "profiles",
+  userId,
+  imageType,
+  `${Date.now()}-${crypto.randomUUID()}${getFileExtension(file)}`,
+].join("/");
+
+export const uploadProfileImage = async (userId, imageType, file) => {
+  if (!Number.isInteger(Number(userId)) || !["avatar", "background"].includes(imageType)) {
+    throw new Error("Thông tin ảnh profile không hợp lệ");
+  }
+  if (!file?.buffer) throw new Error("Không có dữ liệu ảnh profile");
+
+  const key = createProfileImageKey(userId, imageType, file);
+  await uploadObjectToStorage({
+    key,
+    body: file.buffer,
+    contentType: file.mimetype,
+    metadata: { userId: String(userId), type: imageType },
+  });
+  return key;
+};
+
+export const resolveStoredImageUrl = async (value) => {
+  if (!value || typeof value !== "string") return value ?? null;
+  return isStorageObjectKey(value) ? createSignedObjectUrl(value, 7 * 24 * 60 * 60) : value;
+};
+
+export const attachProfileImageUrls = async (record) => {
+  if (!record || typeof record !== "object") return record;
+  const avatarKey = record.avatar;
+  const backgroundKey = record.background ?? record.background_image;
+  return {
+    ...record,
+    avatar_key: avatarKey,
+    background_key: backgroundKey,
+    avatar: await resolveStoredImageUrl(avatarKey),
+    background: await resolveStoredImageUrl(backgroundKey),
+  };
+};
+
 export const uploadStoryImage = async (
   userId,
   file
@@ -353,11 +394,11 @@ export const attachSignedUrlsToPost =
       !Array.isArray(rawContent) &&
       Object.keys(rawContent).length === 0
     ) {
-      return {
+      return attachProfileImageUrls({
         ...post,
         content: {},
         imageKeys: [],
-      };
+      });
     }
 
     const normalizedContent =
@@ -373,7 +414,7 @@ export const attachSignedUrlsToPost =
        * Không biến content thành format lạ.
        * Vẫn trả object chuẩn cho frontend.
        */
-      return {
+      return attachProfileImageUrls({
         ...post,
         content: {
           text:
@@ -381,7 +422,7 @@ export const attachSignedUrlsToPost =
           image: [],
         },
         imageKeys: [],
-      };
+      });
     }
 
     const signedImageUrls =
@@ -389,7 +430,7 @@ export const attachSignedUrlsToPost =
         originalImageKeys
       );
 
-    return {
+    return attachProfileImageUrls({
       ...post,
 
       /*
@@ -410,7 +451,7 @@ export const attachSignedUrlsToPost =
        */
       imageKeys:
         originalImageKeys,
-    };
+    });
   };
 
 export const attachSignedUrlsToPosts =

@@ -2,6 +2,7 @@ import { envConfig } from '../configs/envConfig.js';
 import * as userDAL from '../DAL/userDAL.js';
 import { signAccessToken, signRefeshToken } from '../utils/signTokenAuthorization.js';
 import { hashPassword, isPasswordHash, verifyPassword } from '../utils/password.js';
+import * as storageService from './storageService.js';
 
 export const getUser = async () => {
     const rows = await userDAL.getUser();
@@ -10,7 +11,7 @@ export const getUser = async () => {
 
 export const finUserViaUserId = async (userId) => {
     const rows = await userDAL.finUserViaUserId(userId);
-    return rows;
+    return Promise.all(rows.map(storageService.attachProfileImageUrls));
 }
 
 export const loginUserByEmailAndPassword = async (email, password) => {
@@ -27,8 +28,9 @@ export const loginUserByEmailAndPassword = async (email, password) => {
         const { password: _password, ...userLogin } = databaseUser;
         const accessToken = signAccessToken(userLogin, envConfig.accessSecretKey, { expiresIn: '1h' })
         const refreshToken = signRefeshToken(userLogin, envConfig.refeshSecretKey, { expiresIn: '7day' })
+        const clientUser = await storageService.attachProfileImageUrls(userLogin);
         const tokenForClient = signRefeshToken(
-            { ...userLogin, token_use: 'client-display' },
+            { ...clientUser, token_use: 'client-display' },
             envConfig.refeshSecretKey,
             { expiresIn: '7day', audience: 'pac-pac-frontend' }
         );
@@ -53,7 +55,7 @@ export const revokeRefreshToken = async (token) => {
 export const getListFriendViaUserId = async (userId) => {
     try {
         const rows = await userDAL.getListFriendViaUserId(userId);
-        return rows;
+        return Promise.all(rows.map(storageService.attachProfileImageUrls));
     } catch (error) {
         console.log('error', error);
     }
@@ -62,14 +64,15 @@ export const getListFriendViaUserId = async (userId) => {
 export const getUserFriendOfLoginUser = async (userId) => {
     try {
         const rows = await userDAL.getUserFriendOfLoginUser(userId);
-        return rows;
+        return Promise.all(rows.map(storageService.attachProfileImageUrls));
     } catch (error) {
         console.log('error', error)
     }
 }
 
 export const searchUsers = async (keyword, loginUserId) => {
-    return userDAL.searchUsers(keyword, loginUserId);
+    const rows = await userDAL.searchUsers(keyword, loginUserId);
+    return Promise.all(rows.map(storageService.attachProfileImageUrls));
 }
 
 export const createNewUser = async (name, email, password) => {
@@ -86,20 +89,30 @@ export const createNewUser = async (name, email, password) => {
     }
 }
 
-export const updateAvatarOfUser = async (userId, avatarUrl) => {
-    try {
-        const updatedUser = await userDAL.updateAvatar(userId, avatarUrl);
-        return updatedUser;
-    } catch (error) {
-        console.log('error', error);
-        throw error;
-    }
+export const getProfileMedia = async (userId) => {
+    const rows = await userDAL.getProfileMedia(userId);
+    return Promise.all(rows.map(async ({ image_key: imageKey }) => ({
+        imageKey,
+        imageUrl: await storageService.resolveStoredImageUrl(imageKey),
+    })));
 }
+
+export const updateProfileImage = async (userId, imageType, imageKey) => {
+    const rows = await userDAL.updateProfileImage(userId, imageType, imageKey);
+    return storageService.attachProfileImageUrls(rows[0] ?? null);
+}
+
+export const userOwnsMediaKey = (userId, imageKey) =>
+    userDAL.userOwnsMediaKey(userId, imageKey);
 
 export const getListSendFriend = async (userId) => {
     try {
         const rows = await userDAL.getListSendFriend(userId);
-        return rows;
+        return Promise.all(rows.map(async (row) => ({
+            ...row,
+            sender_avatar: await storageService.resolveStoredImageUrl(row.sender_avatar),
+            receiver_avatar: await storageService.resolveStoredImageUrl(row.receiver_avatar),
+        })));
     } catch (error) {
         console.log('error', error);
     }

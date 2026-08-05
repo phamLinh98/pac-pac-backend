@@ -1,6 +1,8 @@
 import { envConfig } from '../configs/envConfig.js';
 import * as userService from '../services/userService.js';
 import jwt from 'jsonwebtoken';
+import * as storageService from '../services/storageService.js';
+import { deleteObjectFromStorage } from '../configs/s3Config.js';
 // get All User 
 export const getUser = async (req, res) => {
     try {
@@ -202,11 +204,51 @@ export const updateAvatarOfUser = async (req, res) => {
         } catch {
             return res.status(400).json({ message: "Avatar URL không hợp lệ" });
         }
-        const updatedUser = await userService.updateAvatarOfUser(userId, avatar);
+        const updatedUser = await userService.updateProfileImage(userId, 'avatar', avatar);
         return res.status(200).json({ message: "Update avatar successfully", updatedUser });
     } catch (error) {
         console.log('error', error);
         return res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+export const getProfileMedia = async (req, res) => {
+    try {
+        const userId = Number(req.checkAccessToken?.id);
+        const media = await userService.getProfileMedia(userId);
+        return res.status(200).json(media);
+    } catch (error) {
+        console.error('getProfileMedia error:', error);
+        return res.status(500).json({ message: 'Không thể tải kho ảnh' });
+    }
+};
+
+export const updateProfileImage = async (req, res) => {
+    const userId = Number(req.checkAccessToken?.id);
+    const imageType = String(req.body?.imageType ?? '').trim().toLowerCase();
+    let uploadedKey = null;
+
+    try {
+        if (!["avatar", "background"].includes(imageType)) {
+            return res.status(400).json({ message: 'Loại ảnh profile không hợp lệ' });
+        }
+
+        let imageKey = typeof req.body?.imageKey === 'string' ? req.body.imageKey.trim() : '';
+        if (req.file) {
+            uploadedKey = await storageService.uploadProfileImage(userId, imageType, req.file);
+            imageKey = uploadedKey;
+        } else if (!imageKey || !(await userService.userOwnsMediaKey(userId, imageKey))) {
+            return res.status(403).json({ message: 'Ảnh không thuộc kho ảnh của bạn' });
+        }
+
+        const user = await userService.updateProfileImage(userId, imageType, imageKey);
+        if (!user) throw new Error('Không tìm thấy user');
+
+        return res.status(200).json({ message: 'Cập nhật ảnh profile thành công', user });
+    } catch (error) {
+        if (uploadedKey) await deleteObjectFromStorage(uploadedKey).catch(() => undefined);
+        console.error('updateProfileImage error:', error);
+        return res.status(500).json({ message: 'Không thể cập nhật ảnh profile' });
     }
 };
 

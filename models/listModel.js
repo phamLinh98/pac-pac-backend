@@ -25,7 +25,8 @@ export const getList = () => {
       l.likestatus,
       l.created_at,
       u.name AS user_name,
-      u.avatar AS avatar
+      u.avatar AS avatar,
+      u.background AS background
     FROM updated_list l
     JOIN public."user" u
       ON l.user_id = u.id
@@ -47,6 +48,7 @@ export const getListStatusOfOneUser = (
       u.namecode,
       u.name,
       u.avatar,
+      u.background,
       u.list_friend_id
     FROM list l
     JOIN public."user" u
@@ -74,6 +76,7 @@ export const getListStatusOfOneUser = (
        friend_user.namecode,
        friend_user.name,
        friend_user.avatar,
+       friend_user.background,
        friend_user.list_friend_id
      FROM public."user" AS cu
      JOIN list AS l
@@ -106,6 +109,7 @@ export const getListReturnWhenUserIdNotExistInBoth =
         name,
         namecode,
         avatar,
+        background,
         list_friend_id,
         '{}'::jsonb AS content
       FROM public."user"
@@ -135,6 +139,7 @@ export const getListUserIdWithEmptyContent = (userId) => {
       u.namecode,
       u.name,
       u.avatar,
+      u.background,
       u.list_friend_id
     FROM public."user" u
     WHERE u.id = $1;

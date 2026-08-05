@@ -33,6 +33,15 @@ router.get('/send-friend/:id', checkTokenMiddleware, userController.getListSendF
 //Test
 router.get('/user/:id', checkTokenMiddleware, userController.getUserFriendOfLoginUser);
 router.get('/search-user', checkTokenMiddleware, userController.searchUsers);
+router.get('/profile-media', checkTokenMiddleware, userController.getProfileMedia);
+router.put(
+  '/profile-image',
+  checkTokenMiddleware,
+  uploadLimiter,
+  uploadPostImagesMiddleware.single('image'),
+  validateUploadedImages,
+  userController.updateProfileImage
+);
 router.post('/login', loginLimiter, userController.loginUserByEmailAndPassword);
 router.post('/logout', userController.logoutAndRemoveAllToken);
 router.post('/refesh-token', userController.refreshTokenWhenExpired);

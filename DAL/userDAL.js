@@ -91,10 +91,21 @@ export const createUserList = async(userId) => {
     return rows;
 }
 
-export const updateAvatar = async(userId, avatar) => {
-    const {query, values} = userModel.updateAvatar(userId, avatar);
+export const updateProfileImage = async(userId, imageType, imageKey) => {
+    const {query, values} = userModel.updateProfileImage(userId, imageType, imageKey);
     const rows = await sql(query, values);
     return rows;
+}
+
+export const getProfileMedia = async (userId) => {
+    const { query, values } = userModel.getProfileMedia(userId);
+    return sql(query, values);
+}
+
+export const userOwnsMediaKey = async (userId, imageKey) => {
+    const { query, values } = userModel.userOwnsMediaKey(userId, imageKey);
+    const rows = await sql(query, values);
+    return rows[0]?.owns_media === true;
 }
 
 export const getListSendFriend = async(userId) => {

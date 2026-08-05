@@ -130,15 +130,56 @@ FROM new_user;
   return { query, values };
 };
 
-export const updateAvatar = (userId, avatar) => {
-  const query = `
-       UPDATE "public"."user"
-       SET avatar = $1
-       WHERE id = $2
-   `;
-  const values = [avatar, userId];
-  return { query, values };
-};
+export const updateProfileImage = (userId, imageType, imageKey) => ({
+  query: `
+    UPDATE "public"."user"
+    SET ${imageType === "avatar" ? "avatar" : "background"} = $2, updated_at = NOW()
+    WHERE id = $1
+    RETURNING id, name, email, avatar, background, namecode, list_friend_id
+  `,
+  values: [userId, imageKey],
+});
+
+export const getProfileMedia = (userId) => ({
+  query: `
+    SELECT DISTINCT media.image_key
+    FROM (
+      SELECT jsonb_array_elements_text(
+        CASE
+          WHEN jsonb_typeof(content::jsonb->'image') = 'array' THEN content::jsonb->'image'
+          ELSE '[]'::jsonb
+        END
+      ) AS image_key
+      FROM list
+      WHERE user_id = $1
+      UNION ALL
+      SELECT image_url AS image_key FROM story WHERE user_id = $1
+      UNION ALL
+      SELECT unnest(ARRAY[avatar, background]) AS image_key
+      FROM "public"."user" WHERE id = $1
+    ) AS media
+    WHERE media.image_key IS NOT NULL AND media.image_key <> ''
+    ORDER BY media.image_key
+  `,
+  values: [userId],
+});
+
+export const userOwnsMediaKey = (userId, imageKey) => ({
+  query: `
+    SELECT EXISTS (
+      SELECT 1 FROM list
+      WHERE user_id = $1
+        AND jsonb_typeof(content::jsonb->'image') = 'array'
+        AND (content::jsonb->'image') ? $2
+      UNION ALL
+      SELECT 1 FROM story WHERE user_id = $1 AND image_url = $2
+      UNION ALL
+      SELECT 1 FROM "public"."user"
+      WHERE id = $1 AND (avatar = $2 OR background = $2)
+    ) AS owns_media
+  `,
+  values: [userId, imageKey],
+});
 
 export const getListSendFriend = (userId) => {
   const query = `

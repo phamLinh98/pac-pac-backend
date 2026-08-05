@@ -20,9 +20,12 @@ const attachSignedUrl = async (story) => {
     const imageUrl = isStorageKey(imageKey)
         ? await createSignedObjectUrl(imageKey)
         : imageKey;
+    const avatarUrl = await storageService.resolveStoredImageUrl(story.avatar);
 
     return {
         ...story,
+        avatar_key: story.avatar,
+        avatar: avatarUrl,
         image_key: imageKey,
         image_url: imageUrl,
     };
