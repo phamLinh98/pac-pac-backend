@@ -6,6 +6,7 @@ import path from "path";
 import corsMiddleware from "./middlewares/cors.js";
 import router from "./routers/router.js";
 import { envConfig } from "./configs/envConfig.js";
+import { apiLimiter, securityHeaders, validateRequestOrigin } from "./middlewares/security.js";
 
 const app = express();
 
@@ -13,7 +14,11 @@ const app = express();
  * CORS nên được đặt trước parser và router để tất cả response,
  * bao gồm preflight OPTIONS và error response, đều có CORS header.
  */
+app.set("trust proxy", 1);
+app.use(securityHeaders);
 app.use(corsMiddleware);
+app.use(validateRequestOrigin);
+app.use(apiLimiter);
 
 /*
  * cors() đã tự xử lý OPTIONS khi dùng app.use().
@@ -21,11 +26,12 @@ app.use(corsMiddleware);
  */
 app.options("*", corsMiddleware);
 
-app.use(express.json());
+app.use(express.json({ limit: "100kb" }));
 
 app.use(
   express.urlencoded({
-    extended: true,
+    extended: false,
+    limit: "100kb",
   })
 );
 

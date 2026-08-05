@@ -20,13 +20,13 @@ export const getUser = async (req, res) => {
 export const loginUserByEmailAndPassword = async (req, res) => {
     try {
         const { email, password } = req.body;
-        if (!email || !password) {
+        if (!email || !password || String(email).length > 254 || String(password).length > 128) {
             return res.status(400).json({ error: "Email and password are required" });
         }
 
         const result = await userService.loginUserByEmailAndPassword(email, password);
         if (!result) {
-            return res.status(402).json({ error: "Invalid email or password" }); // 402 Unauthorized
+            return res.status(401).json({ error: "Invalid email or password" });
         }
 
         res.cookie('accessToken', result.accessToken, {
@@ -50,8 +50,6 @@ export const loginUserByEmailAndPassword = async (req, res) => {
         return res.status(200).json({
             message: 'Login successful',
             token: result.tokenForClient,
-            accessToken: result.accessToken,
-            refreshToken: result.refreshToken
         });
 
     } catch (error) {
@@ -62,6 +60,12 @@ export const loginUserByEmailAndPassword = async (req, res) => {
 
 // Logout
 export const logoutAndRemoveAllToken = async (req, res) => {
+    try {
+        await userService.revokeRefreshToken(req.signedCookies?.refreshToken);
+    } catch (error) {
+        console.error('Không thể revoke refresh token khi logout:', error);
+    }
+
     res.clearCookie('accessToken', {
         httpOnly: true,
         signed: true,
@@ -76,7 +80,7 @@ export const logoutAndRemoveAllToken = async (req, res) => {
         sameSite: 'none',
         secure: true // Important when using sameSite: 'none'
     });
-    res.send('Cookie đã được xóa!');
+    return res.status(200).json({ message: 'Đăng xuất thành công' });
 }
 
 export const refreshTokenWhenExpired = async (req, res) => {
@@ -84,22 +88,13 @@ export const refreshTokenWhenExpired = async (req, res) => {
         // TODO1: Kiểm tra xem refreshToken có trong cookie hay Authorization header
         let refreshToken = req.signedCookies?.refreshToken;
 
-        // Nếu không có trong cookie, kiểm tra Authorization header
-        if (!refreshToken) {
-            const authHeader = req.headers.authorization;
-            if (authHeader?.startsWith('Bearer ')) {
-                refreshToken = authHeader.slice(7);
-            }
-        }
-
         if (!refreshToken) {
             return res.status(405).json({ message: 'Bạn chưa có refeshToken, yêu cầu đăng nhập lại' });
         }
-        // Xác thực refreshToken và lấy thông tin user
-        jwt.verify(refreshToken, envConfig.refeshSecretKey, (err, decoded) => {
-            if (err) {
-                return res.status(403).json({ message: 'Refresh token không hợp lệ' });
-            }
+        const decoded = jwt.verify(refreshToken, envConfig.refeshSecretKey);
+        if (!(await userService.isRefreshTokenActive(decoded.id, refreshToken))) {
+            return res.status(401).json({ message: 'Refresh token đã bị thu hồi' });
+        }
             // TODO2: Cấp phát accessToken mới
             const { id, name, email, avatar, namecode, list_friend_id, iat } = decoded
             const newAccessToken = jwt.sign(
@@ -119,14 +114,10 @@ export const refreshTokenWhenExpired = async (req, res) => {
             });
 
             // Trả về thành công
-            return res.status(200).json({
-                message: 'Đã cập nhật accessToken',
-                accessToken: newAccessToken,
-            });
-        });
+        return res.status(200).json({ message: 'Đã cập nhật accessToken' });
     } catch (error) {
         console.error('Error refreshing token:', error);
-        return res.status(500).json({ message: 'Lỗi hệ thống' });
+        return res.status(401).json({ message: 'Refresh token không hợp lệ hoặc đã hết hạn' });
     }
 };
 
@@ -178,10 +169,16 @@ export const searchUsers = async (req, res) => {
 export const createNewUser = async (req, res) => {
     try {
         const { name, email, password } = req.body;
-        if (!name || !email || !password) {
+        const normalizedName = String(name ?? '').trim();
+        const normalizedEmail = String(email ?? '').trim().toLowerCase();
+        if (
+            normalizedName.length < 2 || normalizedName.length > 100 ||
+            normalizedEmail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail) ||
+            typeof password !== 'string' || password.length < 8 || password.length > 128
+        ) {
             return res.status(400).json({ error: "Name, email and password are required" });
         }
-        const createNewUser = await userService.createNewUser(name, email, password);
+        const createNewUser = await userService.createNewUser(normalizedName, normalizedEmail, password);
         return res.status(200).json({ message: "Create new user successfully", createNewUser });
     } catch (error) {
         console.log('error', error);
@@ -191,8 +188,20 @@ export const createNewUser = async (req, res) => {
 
 export const updateAvatarOfUser = async (req, res) => {
     try {
-        const userId = req.params.id;
+        const userId = Number(req.checkAccessToken?.id);
+        const routeUserId = Number(req.params.id);
         const { avatar } = req.body;
+        if (userId !== routeUserId) {
+            return res.status(403).json({ message: "Không có quyền sửa avatar của user khác" });
+        }
+        try {
+            const avatarUrl = new URL(String(avatar));
+            if (!['http:', 'https:'].includes(avatarUrl.protocol) || String(avatar).length > 2048) {
+                throw new Error('invalid avatar');
+            }
+        } catch {
+            return res.status(400).json({ message: "Avatar URL không hợp lệ" });
+        }
         const updatedUser = await userService.updateAvatarOfUser(userId, avatar);
         return res.status(200).json({ message: "Update avatar successfully", updatedUser });
     } catch (error) {
@@ -226,6 +235,9 @@ export const updateAddFriend = async (req, res) => {
     try {
         const userIdSecond = req.params.id;
         const userIdFirst = req.params.id2;
+        if (Number(userIdFirst) !== Number(req.checkAccessToken?.id)) {
+            return res.status(403).json({ message: "Không có quyền cập nhật quan hệ của user khác" });
+        }
         const result = await userService.updateAddFriend(userIdFirst, userIdSecond);
         return res.status(200).json({ message: "Yêu cầu kết bạn đã được gửi", result });
     } catch (error) {
@@ -250,6 +262,7 @@ export const sendFriendRequest = async (req, res) => {
 
         const firstId = Number(userIdFirst);
         const secondId = Number(userIdSecond);
+        const loginUserId = Number(req.checkAccessToken?.id);
 
         if (
             !Number.isInteger(firstId) ||
@@ -267,6 +280,12 @@ export const sendFriendRequest = async (req, res) => {
             return res.status(400).json({
                 message:
                     "Không thể gửi lời mời kết bạn cho chính mình",
+            });
+        }
+
+        if (firstId !== loginUserId) {
+            return res.status(403).json({
+                message: "Không thể gửi lời mời dưới danh nghĩa user khác",
             });
         }
 

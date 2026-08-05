@@ -193,6 +193,12 @@ export const createNewPost = async (
   return normalizeRowsContent(rows);
 };
 
+export const getPostByIdAndUser = async (postId, userId) => {
+  const { query, values } = listModel.getPostByIdAndUser(postId, userId);
+  const rows = await sql(query, values);
+  return normalizeRowsContent(rows);
+};
+
 /**
  * Cập nhật bài viết.
  */

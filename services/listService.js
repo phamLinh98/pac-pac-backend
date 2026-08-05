@@ -110,8 +110,7 @@ export const createNewPost = async (
 export const updatePost = async (
   postId,
   userId,
-  content,
-  oldImageKeys = []
+  content
 ) => {
   if (!Number.isInteger(postId) || postId <= 0) {
     throw new TypeError(
@@ -135,27 +134,25 @@ export const updatePost = async (
     );
   }
 
-  // Xóa ảnh cũ không còn sử dụng
-  if (Array.isArray(oldImageKeys) && oldImageKeys.length > 0) {
-    const newImageKeys = 
-      Array.isArray(content.image) 
-        ? content.image 
-        : [];
-    
-    const imagesToDelete = oldImageKeys.filter(
-      (oldKey) => !newImageKeys.includes(oldKey)
-    );
-
-    if (imagesToDelete.length > 0) {
-      await storageService.deletePostImages(imagesToDelete);
-    }
-  }
+  const existingRows = await listDAL.getPostByIdAndUser(postId, userId);
+  if (existingRows.length === 0) return [];
+  const existingImageKeys = Array.isArray(existingRows[0]?.content?.image)
+    ? existingRows[0].content.image
+    : [];
 
   const rows = await listDAL.updatePost(
     postId,
     userId,
     content
   );
+
+  const newImageKeys = Array.isArray(content.image) ? content.image : [];
+  const imagesToDelete = existingImageKeys.filter(
+    (key) => typeof key === "string" && key.startsWith(`posts/${userId}/`) && !newImageKeys.includes(key)
+  );
+  if (rows.length > 0 && imagesToDelete.length > 0) {
+    await storageService.deletePostImages(imagesToDelete);
+  }
 
   /*
    * UPDATE RETURNING trả về object key.

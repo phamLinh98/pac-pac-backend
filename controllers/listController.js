@@ -27,11 +27,16 @@ export const getList = async (req, res) => {
 export const getListStatusOfOneUser = async (req, res) => {
   try {
     const userId = Number(req.params.id);
+    const loginUserId = Number(req.checkAccessToken?.id);
 
     if (!Number.isInteger(userId) || userId <= 0) {
       return res.status(400).json({
         error: "Invalid id parameter",
       });
+    }
+
+    if (userId !== loginUserId) {
+      return res.status(403).json({ error: "Không có quyền xem bảng tin của user khác" });
     }
 
     const result =
@@ -115,19 +120,7 @@ export const createNewPost = async (req, res) => {
      * Nếu middleware hiện tại chưa gán user vào req,
      * tạm thời fallback sang req.body.userId.
      */
-    const tokenUserId = Number(
-      req.user?.id ??
-        req.auth?.id ??
-        req.data?.id
-    );
-
-    const bodyUserId = Number(req.body?.userId);
-
-    const userId =
-      Number.isInteger(tokenUserId) &&
-      tokenUserId > 0
-        ? tokenUserId
-        : bodyUserId;
+    const userId = Number(req.checkAccessToken?.id);
 
     if (!Number.isInteger(userId) || userId <= 0) {
       return res.status(400).json({
@@ -161,6 +154,14 @@ export const createNewPost = async (req, res) => {
           )
           .map((item) => item.trim())
       : [];
+
+    if (text.length > 10000 || image.length > 10) {
+      return res.status(400).json({ message: "Nội dung hoặc số lượng ảnh vượt giới hạn" });
+    }
+
+    if (image.some((key) => !key.startsWith(`posts/${userId}/`))) {
+      return res.status(400).json({ message: "Ảnh bài viết không thuộc user đăng nhập" });
+    }
 
     if (!text && image.length === 0) {
       return res.status(400).json({
@@ -226,19 +227,7 @@ export const uploadPostImages = async (req, res) => {
       });
     }
 
-    const tokenUserId = Number(
-      req.user?.id ??
-        req.auth?.id ??
-        req.data?.id
-    );
-
-    const bodyUserId = Number(req.body?.userId);
-
-    const userId =
-      Number.isInteger(tokenUserId) &&
-      tokenUserId > 0
-        ? tokenUserId
-        : bodyUserId;
+    const userId = Number(req.checkAccessToken?.id);
 
     if (!Number.isInteger(userId) || userId <= 0) {
       return res.status(400).json({
@@ -317,13 +306,7 @@ export const updatePost = async (req, res) => {
         req.checkAccessToken?.id
     );
 
-    const bodyUserId = Number(req.body?.userId);
-
-    const userId =
-      Number.isInteger(tokenUserId) &&
-      tokenUserId > 0
-        ? tokenUserId
-        : bodyUserId;
+    const userId = tokenUserId;
 
     if (!Number.isInteger(userId) || userId <= 0) {
       return res.status(400).json({
@@ -353,7 +336,7 @@ export const updatePost = async (req, res) => {
           req.body.existingImages
         );
         existingImages = Array.isArray(parsed)
-          ? parsed
+          ? parsed.filter((key) => typeof key === "string" && key.startsWith(`posts/${userId}/`))
           : [];
       } catch (error) {
         console.error(
@@ -375,15 +358,9 @@ export const updatePost = async (req, res) => {
         ? req.body.text.trim()
         : "";
 
-    // Debug log
-    console.log("Update post request:", {
-      postId,
-      userId,
-      text: text.substring(0, 50),
-      existingImages,
-      newImageKeys,
-      allImages,
-    });
+    if (text.length > 10000 || allImages.length > 10) {
+      return res.status(400).json({ message: "Nội dung hoặc số lượng ảnh vượt giới hạn" });
+    }
 
     // Cho phép update chỉ text (không yêu cầu ảnh)
     if (!text && allImages.length === 0) {
@@ -398,36 +375,24 @@ export const updatePost = async (req, res) => {
       image: allImages,
     };
 
-    // Lấy danh sách ảnh cũ cần xoá
-    let oldImageKeys = [];
-    if (req.body?.oldImageKeys) {
-      try {
-        const parsed = JSON.parse(
-          req.body.oldImageKeys
-        );
-        oldImageKeys = Array.isArray(parsed)
-          ? parsed
-          : [];
-      } catch (error) {
-        console.error(
-          "Error parsing oldImageKeys:",
-          error
-        );
-      }
-    }
-
     const updatedPosts =
       await listService.updatePost(
         postId,
         userId,
-        content,
-        oldImageKeys
+        content
       );
 
     const updatedPost =
       Array.isArray(updatedPosts)
         ? updatedPosts[0] ?? null
         : updatedPosts;
+
+    if (!updatedPost) {
+      if (newImageKeys.length > 0) {
+        await storageService.deletePostImages(newImageKeys);
+      }
+      return res.status(404).json({ message: "Không tìm thấy bài viết" });
+    }
 
     return res.status(200).json({
       message: "Cập nhật bài viết thành công.",
@@ -469,13 +434,7 @@ export const deletePost = async (req, res) => {
         req.checkAccessToken?.id
     );
 
-    const bodyUserId = Number(req.body?.userId);
-
-    const userId =
-      Number.isInteger(tokenUserId) &&
-      tokenUserId > 0
-        ? tokenUserId
-        : bodyUserId;
+    const userId = tokenUserId;
 
     if (!Number.isInteger(userId) || userId <= 0) {
       return res.status(400).json({

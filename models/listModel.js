@@ -238,6 +238,11 @@ export const createNewPost = (
   };
 };
 
+export const getPostByIdAndUser = (postId, userId) => ({
+  query: `SELECT id, user_id, content FROM list WHERE id = $1 AND user_id = $2 LIMIT 1`,
+  values: [postId, userId],
+});
+
 /**
  * Cập nhật bài viết.
  *

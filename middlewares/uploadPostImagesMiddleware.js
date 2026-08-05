@@ -14,9 +14,7 @@ const fileFilter = (
 ) => {
   if (!allowedMimeTypes.has(file.mimetype)) {
     callback(
-      new Error(
-        "Chỉ chấp nhận ảnh JPEG, PNG, WEBP hoặc GIF."
-      ),
+      Object.assign(new Error("Chỉ chấp nhận ảnh JPEG, PNG, WEBP hoặc GIF."), { statusCode: 400 }),
       false
     );
 
@@ -43,3 +41,22 @@ export const uploadPostImagesMiddleware =
       files: 10,
     },
   });
+
+const hasValidSignature = (file) => {
+  const buffer = file?.buffer;
+  if (!Buffer.isBuffer(buffer) || buffer.length < 12) return false;
+
+  if (file.mimetype === "image/jpeg") return buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  if (file.mimetype === "image/png") return buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  if (file.mimetype === "image/gif") return ["GIF87a", "GIF89a"].includes(buffer.subarray(0, 6).toString("ascii"));
+  if (file.mimetype === "image/webp") return buffer.subarray(0, 4).toString("ascii") === "RIFF" && buffer.subarray(8, 12).toString("ascii") === "WEBP";
+  return false;
+};
+
+export const validateUploadedImages = (req, res, next) => {
+  const files = req.file ? [req.file] : Array.isArray(req.files) ? req.files : [];
+  if (files.some((file) => !hasValidSignature(file))) {
+    return res.status(400).json({ message: "Nội dung file không khớp với định dạng ảnh" });
+  }
+  return next();
+};

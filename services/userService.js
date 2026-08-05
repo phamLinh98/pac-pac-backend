@@ -1,6 +1,7 @@
 import { envConfig } from '../configs/envConfig.js';
 import * as userDAL from '../DAL/userDAL.js';
 import { signAccessToken, signRefeshToken } from '../utils/signTokenAuthorization.js';
+import { hashPassword, isPasswordHash, verifyPassword } from '../utils/password.js';
 
 export const getUser = async () => {
     const rows = await userDAL.getUser();
@@ -13,12 +14,24 @@ export const finUserViaUserId = async (userId) => {
 }
 
 export const loginUserByEmailAndPassword = async (email, password) => {
-    try {
-        const rows = await userDAL.loginUserByEmailAndPassword(email, password);
-        const userLogin = rows[0];
+        const rows = await userDAL.findUserForLogin(email);
+        const databaseUser = rows[0];
+        if (!databaseUser || !(await verifyPassword(password, databaseUser.password))) {
+            return null;
+        }
+
+        if (!isPasswordHash(databaseUser.password)) {
+            await userDAL.updatePasswordHash(databaseUser.id, await hashPassword(password));
+        }
+
+        const { password: _password, ...userLogin } = databaseUser;
         const accessToken = signAccessToken(userLogin, envConfig.accessSecretKey, { expiresIn: '1h' })
         const refreshToken = signRefeshToken(userLogin, envConfig.refeshSecretKey, { expiresIn: '7day' })
-        const tokenForClient = signRefeshToken(userLogin, envConfig.accessSecretKey, { expiresIn: '1h' });
+        const tokenForClient = signRefeshToken(
+            { ...userLogin, token_use: 'client-display' },
+            envConfig.refeshSecretKey,
+            { expiresIn: '7day', audience: 'pac-pac-frontend' }
+        );
         await userDAL.saveRefeshToken(userLogin.id, refreshToken);
         return {
             userLogin,
@@ -26,9 +39,15 @@ export const loginUserByEmailAndPassword = async (email, password) => {
             refreshToken,
             tokenForClient
         }
-    } catch (error) {
-        console.log('Khong tim thay user', error);
-    }
+}
+
+export const isRefreshTokenActive = async (userId, token) => {
+    const rows = await userDAL.findValidRefreshToken(userId, token);
+    return Array.isArray(rows) && rows.length > 0;
+}
+
+export const revokeRefreshToken = async (token) => {
+    if (token) await userDAL.revokeRefreshToken(token);
 }
 
 export const getListFriendViaUserId = async (userId) => {
@@ -56,7 +75,8 @@ export const searchUsers = async (keyword, loginUserId) => {
 export const createNewUser = async (name, email, password) => {
     try {
         // Tạo user trước
-        const newUser = await userDAL.createNewUser(name, email, password);
+        const passwordHash = await hashPassword(password);
+        const newUser = await userDAL.createNewUser(name, email, passwordHash);
         //await userDAL.createUserList(userId);
         return newUser;
        

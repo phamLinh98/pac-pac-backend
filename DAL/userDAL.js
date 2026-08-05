@@ -1,5 +1,8 @@
 import sql from '../configs/db.js';
 import * as userModel from '../models/userModel.js';
+import crypto from 'crypto';
+
+const tokenDigest = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
 export const getUser = async () => {
     try {
@@ -31,16 +34,31 @@ export const finUserViaUserId = async(userId) => {
 
 }
 
-export const loginUserByEmailAndPassword = async (email, password) => {
-    const { query, values } = userModel.loginUserByEmailAndPassword(email, password);
+export const findUserForLogin = async (email) => {
+    const { query, values } = userModel.findUserForLogin(email);
     const rows = await sql(query, values);
     return rows;
 }
 
+export const updatePasswordHash = async (userId, passwordHash) => {
+    const { query, values } = userModel.updatePasswordHash(userId, passwordHash);
+    return sql(query, values);
+}
+
 export const saveRefeshToken = async (userId, token) => {
-   const {query, values} = userModel.saveRefeshToken(userId, token);
+   const {query, values} = userModel.saveRefeshToken(userId, tokenDigest(token));
    const rows = await sql(query, values);
    return rows;
+}
+
+export const findValidRefreshToken = async (userId, token) => {
+    const { query, values } = userModel.findValidRefreshToken(userId, token, tokenDigest(token));
+    return sql(query, values);
+}
+
+export const revokeRefreshToken = async (token) => {
+    const { query, values } = userModel.revokeRefreshToken(token, tokenDigest(token));
+    return sql(query, values);
 }
 
 

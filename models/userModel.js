@@ -14,15 +14,20 @@ export const finUserViaUserId = (userId) => {
   return { query, values };
 };
 
-export const loginUserByEmailAndPassword = (email, password) => {
+export const findUserForLogin = (email) => {
   const query = `
-            SELECT id, name, email, avatar, namecode, list_friend_id, background, list_friend_id
+            SELECT id, name, email, password, avatar, namecode, list_friend_id, background
             FROM "public"."user"
-            WHERE email = $1 AND password = $2
+            WHERE LOWER(email) = LOWER($1)
             LIMIT 1`;
-  const values = [email, password];
+  const values = [email];
   return { query, values };
 };
+
+export const updatePasswordHash = (userId, passwordHash) => ({
+  query: `UPDATE "public"."user" SET password = $2, updated_at = NOW() WHERE id = $1`,
+  values: [userId, passwordHash],
+});
 
 export const saveRefeshToken = (userId, token) => {
   const query = `
@@ -34,19 +39,33 @@ export const saveRefeshToken = (userId, token) => {
         ),
       InsertNew AS (
       INSERT INTO "public"."refresh_tokens" (user_id,token, expiry_at, created_at)
-      VALUES ($1,$2, NOW() + INTERVAL '1 day', NOW())
+      VALUES ($1,$2, NOW() + INTERVAL '7 days', NOW())
       RETURNING token_id, user_id, token, expiry_at, created_at)
       SELECT * FROM InsertNew `;
   const values = [userId, token];
   return { query, values };
 };
 
+export const findValidRefreshToken = (userId, token, tokenDigest) => ({
+  query: `
+    SELECT token_id
+    FROM "public"."refresh_tokens"
+    WHERE user_id = $1 AND token IN ($2, $3) AND expiry_at > NOW()
+    LIMIT 1
+  `,
+  values: [userId, token, tokenDigest],
+});
+
+export const revokeRefreshToken = (token, tokenDigest) => ({
+  query: `DELETE FROM "public"."refresh_tokens" WHERE token IN ($1, $2)`,
+  values: [token, tokenDigest],
+});
+
 export const getListFriendViaUserId = (userId) => {
   const query = `
     SELECT
       friend_account.id,
       friend_account.name,
-      friend_account.email,
       friend_account.avatar,
       friend_account.namecode,
       friend_account.list_friend_id
@@ -64,7 +83,7 @@ export const getListFriendViaUserId = (userId) => {
 };
 
 export const getUserFriendOfLoginUser = (userId) => {
-  const query = `SELECT id, name, email, avatar, list_friend_id
+  const query = `SELECT id, name, avatar, list_friend_id
                  FROM "public"."user"
                  WHERE id != $1 `;
   const values = [userId];

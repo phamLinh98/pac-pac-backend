@@ -38,9 +38,16 @@ export const getCommentByListId = async (req, res) => {
 
 export const addComment = async (req, res) => {
     try {
-        const userId = req.params.userId;
-        const listId = req.params.listId;
-        const { content } = req.body;
+        const userId = Number(req.checkAccessToken?.id);
+        const listId = Number(req.params.listId);
+        const content = typeof req.body?.content === 'string' ? req.body.content.trim() : '';
+
+        if (!Number.isInteger(userId) || !Number.isInteger(listId) || listId <= 0) {
+            return res.status(400).json({ message: 'User hoặc bài viết không hợp lệ' });
+        }
+        if (!content || content.length > 2000) {
+            return res.status(400).json({ message: 'Bình luận phải từ 1 đến 2000 ký tự' });
+        }
 
         // Thêm comment vào cơ sở dữ liệu
         const newComment = await commentService.addComment(userId, listId, content);
@@ -53,5 +60,4 @@ export const addComment = async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 }
-
 
