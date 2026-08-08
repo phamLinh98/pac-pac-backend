@@ -4,8 +4,8 @@ import * as storageService from "./storageService.js";
 /**
  * Lấy toàn bộ bài viết.
  */
-export const getList = async () => {
-  const rows = await listDAL.getList();
+export const getList = async (viewerUserId) => {
+  const rows = await listDAL.getList(viewerUserId);
 
   /*
    * Chuyển object key trong content.image
@@ -42,7 +42,8 @@ export const getListStatusOfOneUser = async (
  * Lấy toàn bộ bài viết của một user.
  */
 export const getListUserStatusByUserId = async (
-  userId
+  userId,
+  viewerUserId
 ) => {
   if (!Number.isInteger(userId) || userId <= 0) {
     throw new TypeError(
@@ -52,7 +53,8 @@ export const getListUserStatusByUserId = async (
 
   const rows =
     await listDAL.getListUserStatusByUserId(
-      userId
+      userId,
+      viewerUserId
     );
 
   return storageService.attachSignedUrlsToPosts(

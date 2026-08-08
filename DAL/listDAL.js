@@ -63,10 +63,10 @@ const validateUserId = (userId, functionName) => {
 /**
  * Lấy toàn bộ bài viết.
  */
-export const getList = async () => {
-  const query = listModel.getList();
+export const getList = async (viewerUserId) => {
+  const { query, values } = listModel.getList(viewerUserId);
 
-  const rows = await sql(query);
+  const rows = await sql(query, values);
 
   return normalizeRowsContent(rows);
 };
@@ -132,7 +132,8 @@ export const getListStatusOfOneUser = async (
  * Lấy toàn bộ bài viết của một user.
  */
 export const getListUserStatusByUserId = async (
-  userId
+  userId,
+  viewerUserId
 ) => {
   validateUserId(
     userId,
@@ -141,7 +142,8 @@ export const getListUserStatusByUserId = async (
 
   const { query, values } =
     listModel.getListStatusOfOneUser(
-      userId
+      userId,
+      viewerUserId
     );
 
   const rows = await sql(query, values);

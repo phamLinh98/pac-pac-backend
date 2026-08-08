@@ -4,47 +4,41 @@
  * Giữ nguyên logic hiện tại:
  * trước khi SELECT sẽ cập nhật số comment cho từng post.
  */
-export const getList = () => {
+export const getList = (viewerUserId) => {
   const query = `
-    WITH updated_list AS (
-      UPDATE list
-      SET comment = (
-        SELECT COUNT(*)
-        FROM comment c
-        WHERE c.post_id = list.id
-      )
-      RETURNING *
-    )
     SELECT
       l.id,
       l.user_id,
       l.content,
-      l.comment,
-      l."like",
+      (SELECT COUNT(*) FROM comment c WHERE c.list_id = l.id)::int AS comment,
+      (SELECT COUNT(*) FROM post_like pl WHERE pl.post_id = l.id)::int AS "like",
       l.shared,
-      l.likestatus,
+      EXISTS (SELECT 1 FROM post_like pl WHERE pl.post_id = l.id AND pl.user_id = $1) AS likestatus,
       l.created_at,
       u.name AS user_name,
       u.avatar AS avatar,
       u.background AS background
-    FROM updated_list l
+    FROM list l
     JOIN public."user" u
       ON l.user_id = u.id
     ORDER BY l.created_at DESC;
   `;
-
-  return query;
+  return { query, values: [viewerUserId] };
 };
 
 /**
  * Lấy toàn bộ bài viết của một user.
  */
 export const getListStatusOfOneUser = (
-  userId
+  userId,
+  viewerUserId
 ) => {
   const query = `
     SELECT
       l.*,
+      (SELECT COUNT(*) FROM comment c WHERE c.list_id = l.id)::int AS comment,
+      (SELECT COUNT(*) FROM post_like pl WHERE pl.post_id = l.id)::int AS "like",
+      EXISTS (SELECT 1 FROM post_like pl WHERE pl.post_id = l.id AND pl.user_id = $2) AS likestatus,
       u.namecode,
       u.name,
       u.avatar,
@@ -57,7 +51,7 @@ export const getListStatusOfOneUser = (
     ORDER BY l.created_at DESC;
   `;
 
-  const values = [userId];
+  const values = [userId, viewerUserId];
 
   return {
     query,
@@ -73,6 +67,9 @@ export const getListStatusOfOneUser = (
    const query = `
      SELECT
        l.*,
+       (SELECT COUNT(*) FROM comment c WHERE c.list_id = l.id)::int AS comment,
+       (SELECT COUNT(*) FROM post_like pl WHERE pl.post_id = l.id)::int AS "like",
+       EXISTS (SELECT 1 FROM post_like pl WHERE pl.post_id = l.id AND pl.user_id = $1) AS likestatus,
        friend_user.namecode,
        friend_user.name,
        friend_user.avatar,

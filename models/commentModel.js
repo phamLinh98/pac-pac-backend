@@ -30,6 +30,11 @@ export const addComment = (userId, listId, content) => {
       )
       VALUES ($1, $2, $3, NOW())
       RETURNING *
+    ), updated_post AS (
+      UPDATE list
+      SET comment = (SELECT COUNT(*) FROM comment WHERE list_id = $1) + 1
+      WHERE id = $1
+      RETURNING id
     ), new_notification AS (
       INSERT INTO notification_message (
         receiver_user_id,

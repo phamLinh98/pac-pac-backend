@@ -6,7 +6,7 @@ import * as storageService from "../services/storageService.js";
  */
 export const getList = async (req, res) => {
   try {
-    const result = await listService.getList();
+    const result = await listService.getList(Number(req.checkAccessToken?.id));
 
     return res.status(200).json(result);
   } catch (error) {
@@ -79,7 +79,8 @@ export const getListUserStatusByUserId = async (
 
     const result =
       await listService.getListUserStatusByUserId(
-        userId
+        userId,
+        Number(req.checkAccessToken?.id)
       );
 
     if (!Array.isArray(result) || result.length === 0) {
