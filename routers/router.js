@@ -28,6 +28,9 @@ router.post(
   validateUploadedImages,
   storyController.createStory
 );
+router.post('/comments/:id/like', checkTokenMiddleware, commentController.toggleCommentLike);
+router.patch('/comments/:id', checkTokenMiddleware, commentController.updateComment);
+router.delete('/comments/:id', checkTokenMiddleware, commentController.deleteComment);
 router.delete('/story/expired', checkTokenMiddleware, storyController.deleteExpiredStories);
 router.delete('/story/:id', checkTokenMiddleware, storyController.deleteStory);
 router.get('/comment', checkTokenMiddleware, commentController.getComment);

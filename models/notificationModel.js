@@ -17,7 +17,7 @@ export const getCommentNotifications = (receiverUserId, limit = 30) => ({
     JOIN public."user" sender ON sender.id = n.sender_user_id
     LEFT JOIN comment c ON c.id = n.comment_id
     WHERE n.receiver_user_id = $1
-      AND n.notification_type IN ('COMMENT', 'LIKE', 'SHARE')
+      AND n.notification_type IN ('COMMENT', 'LIKE', 'SHARE', 'COMMENT_LIKE', 'REPLY', 'MENTION')
     ORDER BY n.created_at DESC
     LIMIT $2
   `,
@@ -39,7 +39,7 @@ export const markAllCommentNotificationsAsRead = (receiverUserId) => ({
     UPDATE notification_message
     SET is_read = TRUE, updated_at = NOW()
     WHERE receiver_user_id = $1
-      AND notification_type IN ('COMMENT', 'LIKE', 'SHARE')
+      AND notification_type IN ('COMMENT', 'LIKE', 'SHARE', 'COMMENT_LIKE', 'REPLY', 'MENTION')
       AND is_read = FALSE
     RETURNING id
   `,

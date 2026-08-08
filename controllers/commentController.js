@@ -22,7 +22,7 @@ export const getCommentByListId = async (req, res) => {
             return res.status(400).json({ error: "Missing id parameter" });
         }
         // Query dữ liệu từ bảng comment, sử dụng tham số
-        const result = await commentService.getCommentByListId(listId);
+        const result = await commentService.getCommentByListId(listId, Number(req.checkAccessToken?.id));
         // Kiểm tra xem có dữ liệu trả về hay không
         if (!result || result.length === 0) {
             return res.status(200).json([]);
@@ -41,6 +41,11 @@ export const addComment = async (req, res) => {
         const userId = Number(req.checkAccessToken?.id);
         const listId = Number(req.params.listId);
         const content = typeof req.body?.content === 'string' ? req.body.content.trim() : '';
+        const parentCommentId = Number(req.body?.parentCommentId) || null;
+        let mentionUserIds = [];
+        try { mentionUserIds = JSON.parse(req.body?.mentionUserIds || '[]'); } catch { mentionUserIds = []; }
+        mentionUserIds = [...new Set((Array.isArray(mentionUserIds) ? mentionUserIds : []).map(Number)
+            .filter((id) => Number.isInteger(id) && id > 0))].slice(0, 20);
 
         if (!Number.isInteger(userId) || !Number.isInteger(listId) || listId <= 0) {
             return res.status(400).json({ message: 'User hoặc bài viết không hợp lệ' });
@@ -50,7 +55,7 @@ export const addComment = async (req, res) => {
         }
 
         // Thêm comment vào cơ sở dữ liệu
-        const newComment = await commentService.addComment(userId, listId, content, req.file);
+        const newComment = await commentService.addComment(userId, listId, content, req.file, parentCommentId, mentionUserIds);
 
         // Trả về dữ liệu comment mới dưới dạng JSON
         res.status(200).json(newComment);
@@ -60,3 +65,26 @@ export const addComment = async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 }
+
+export const toggleCommentLike = async (req, res) => {
+    try {
+        const result = await commentService.toggleCommentLike(Number(req.params.id), Number(req.checkAccessToken?.id));
+        return result ? res.json(result) : res.status(404).json({ message: 'Không tìm thấy bình luận' });
+    } catch (error) { console.error(error); return res.status(500).json({ message: 'Không thể thích bình luận' }); }
+};
+
+export const updateComment = async (req, res) => {
+    try {
+        const content = typeof req.body?.content === 'string' ? req.body.content.trim() : '';
+        if (content.length > 2000) return res.status(400).json({ message: 'Bình luận tối đa 2000 ký tự' });
+        const result = await commentService.updateComment(Number(req.params.id), Number(req.checkAccessToken?.id), content);
+        return result ? res.json(result) : res.status(404).json({ message: 'Không tìm thấy hoặc không có quyền sửa bình luận' });
+    } catch (error) { console.error(error); return res.status(500).json({ message: 'Không thể sửa bình luận' }); }
+};
+
+export const deleteComment = async (req, res) => {
+    try {
+        const result = await commentService.deleteComment(Number(req.params.id), Number(req.checkAccessToken?.id));
+        return result ? res.json({ message: 'Đã xóa bình luận', id: result.id }) : res.status(404).json({ message: 'Không tìm thấy hoặc không có quyền xóa bình luận' });
+    } catch (error) { console.error(error); return res.status(500).json({ message: 'Không thể xóa bình luận' }); }
+};
