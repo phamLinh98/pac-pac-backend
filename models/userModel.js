@@ -39,7 +39,7 @@ export const saveRefeshToken = (userId, token) => {
         ),
       InsertNew AS (
       INSERT INTO "public"."refresh_tokens" (user_id,token, expiry_at, created_at)
-      VALUES ($1,$2, NOW() + INTERVAL '7 days', NOW())
+      VALUES ($1,$2, NOW() + INTERVAL '1 year', NOW())
       RETURNING token_id, user_id, token, expiry_at, created_at)
       SELECT * FROM InsertNew `;
   const values = [userId, token];

@@ -41,7 +41,7 @@ export const loginUserByEmailAndPassword = async (req, res) => {
         });
 
         res.cookie('refreshToken', result.refreshToken, {
-            maxAge: 7 * 24 * 60 * 60 * 1000,  // 7d
+            maxAge: 365 * 24 * 60 * 60 * 1000,  // 1 year
             httpOnly: true,
             signed: true,
             path: '/',

@@ -27,12 +27,12 @@ export const loginUserByEmailAndPassword = async (email, password) => {
 
         const { password: _password, ...userLogin } = databaseUser;
         const accessToken = signAccessToken(userLogin, envConfig.accessSecretKey, { expiresIn: '1h' })
-        const refreshToken = signRefeshToken(userLogin, envConfig.refeshSecretKey, { expiresIn: '7day' })
+        const refreshToken = signRefeshToken(userLogin, envConfig.refeshSecretKey, { expiresIn: '365d' })
         const clientUser = await storageService.attachProfileImageUrls(userLogin);
         const tokenForClient = signRefeshToken(
             { ...clientUser, token_use: 'client-display' },
             envConfig.refeshSecretKey,
-            { expiresIn: '7day', audience: 'pac-pac-frontend' }
+            { expiresIn: '365d', audience: 'pac-pac-frontend' }
         );
         await userDAL.saveRefeshToken(userLogin.id, refreshToken);
         return {
