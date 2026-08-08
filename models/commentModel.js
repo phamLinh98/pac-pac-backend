@@ -104,7 +104,9 @@ export const updateComment = (commentId, userId, content) => ({
 export const deleteComment = (commentId, userId) => ({
   query: `
     WITH deleted_notifications AS (
-      DELETE FROM notification_message WHERE comment_id = $1
+      DELETE FROM notification_message
+      WHERE comment_id = $1
+        AND EXISTS (SELECT 1 FROM comment WHERE id = $1 AND user_id = $2)
     ), deleted AS (
       DELETE FROM comment WHERE id = $1 AND user_id = $2
       RETURNING id, list_id, image_key
