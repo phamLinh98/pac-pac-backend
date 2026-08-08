@@ -6,6 +6,7 @@ import * as userController from '../controllers/userController.js';
 import * as notificationController from '../controllers/notificationController.js';
 import * as chatController from '../controllers/chatController.js';
 import * as likeController from '../controllers/likeController.js';
+import * as shareController from '../controllers/shareController.js';
 import { checkTokenMiddleware } from '../middlewares/checkTokenNotValid.js';
 import {
   uploadPostImagesMiddleware,
@@ -58,6 +59,7 @@ router.delete("/friend-request/:id", checkTokenMiddleware, userController.cancel
 
 router.post("/add-comment/:userId/:listId", checkTokenMiddleware, commentController.addComment);
 router.post('/posts/:postId/like', checkTokenMiddleware, likeController.togglePostLike);
+router.post('/posts/:postId/share', checkTokenMiddleware, shareController.sharePost);
 router.get(
   "/notifications/comments",
   checkTokenMiddleware,

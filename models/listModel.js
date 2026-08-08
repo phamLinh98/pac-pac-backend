@@ -10,9 +10,19 @@ export const getList = (viewerUserId) => {
       l.id,
       l.user_id,
       l.content,
+      l.original_post_id,
+      l.share_snapshot,
+      (l.share_snapshot IS NOT NULL) AS is_shared_post,
+      (op.id IS NOT NULL) AS original_post_exists,
+      op.content AS original_content,
+      op.created_at AS original_created_at,
+      ou.id AS original_author_id,
+      ou.name AS original_author_name,
+      ou.avatar AS original_author_avatar,
+      CASE WHEN l.share_snapshot IS NOT NULL AND op.id IS NOT NULL THEN op.shared ELSE l.shared END AS shared,
       (SELECT COUNT(*) FROM comment c WHERE c.list_id = l.id)::int AS comment,
       (SELECT COUNT(*) FROM post_like pl WHERE pl.post_id = l.id)::int AS "like",
-      l.shared,
+      CASE WHEN l.share_snapshot IS NOT NULL AND op.id IS NOT NULL THEN op.shared ELSE l.shared END AS shared,
       EXISTS (SELECT 1 FROM post_like pl WHERE pl.post_id = l.id AND pl.user_id = $1) AS likestatus,
       l.created_at,
       u.name AS user_name,
@@ -21,6 +31,8 @@ export const getList = (viewerUserId) => {
     FROM list l
     JOIN public."user" u
       ON l.user_id = u.id
+    LEFT JOIN list op ON op.id = l.original_post_id
+    LEFT JOIN public."user" ou ON ou.id = op.user_id
     ORDER BY l.created_at DESC;
   `;
   return { query, values: [viewerUserId] };
@@ -36,6 +48,13 @@ export const getListStatusOfOneUser = (
   const query = `
     SELECT
       l.*,
+      (l.share_snapshot IS NOT NULL) AS is_shared_post,
+      (op.id IS NOT NULL) AS original_post_exists,
+      op.content AS original_content,
+      op.created_at AS original_created_at,
+      ou.id AS original_author_id,
+      ou.name AS original_author_name,
+      ou.avatar AS original_author_avatar,
       (SELECT COUNT(*) FROM comment c WHERE c.list_id = l.id)::int AS comment,
       (SELECT COUNT(*) FROM post_like pl WHERE pl.post_id = l.id)::int AS "like",
       EXISTS (SELECT 1 FROM post_like pl WHERE pl.post_id = l.id AND pl.user_id = $2) AS likestatus,
@@ -47,6 +66,8 @@ export const getListStatusOfOneUser = (
     FROM list l
     JOIN public."user" u
       ON l.user_id = u.id
+    LEFT JOIN list op ON op.id = l.original_post_id
+    LEFT JOIN public."user" ou ON ou.id = op.user_id
     WHERE l.user_id = $1
     ORDER BY l.created_at DESC;
   `;
@@ -67,6 +88,14 @@ export const getListStatusOfOneUser = (
    const query = `
      SELECT
        l.*,
+       (l.share_snapshot IS NOT NULL) AS is_shared_post,
+       (op.id IS NOT NULL) AS original_post_exists,
+       op.content AS original_content,
+       op.created_at AS original_created_at,
+       ou.id AS original_author_id,
+       ou.name AS original_author_name,
+       ou.avatar AS original_author_avatar,
+       CASE WHEN l.share_snapshot IS NOT NULL AND op.id IS NOT NULL THEN op.shared ELSE l.shared END AS shared,
        (SELECT COUNT(*) FROM comment c WHERE c.list_id = l.id)::int AS comment,
        (SELECT COUNT(*) FROM post_like pl WHERE pl.post_id = l.id)::int AS "like",
        EXISTS (SELECT 1 FROM post_like pl WHERE pl.post_id = l.id AND pl.user_id = $1) AS likestatus,
@@ -85,6 +114,8 @@ export const getListStatusOfOneUser = (
        )
      JOIN public."user" AS friend_user
        ON friend_user.id = l.user_id
+     LEFT JOIN list op ON op.id = l.original_post_id
+     LEFT JOIN public."user" ou ON ou.id = op.user_id
      WHERE cu.id = $1
      ORDER BY l.created_at DESC;
    `;
@@ -287,6 +318,13 @@ export const deletePost = (
   userId
 ) => {
   const query = `
+    WITH target AS (
+      SELECT * FROM list WHERE id = $1 AND user_id = $2
+    ), updated_original AS (
+      UPDATE list
+      SET shared = GREATEST(0, shared - 1)
+      WHERE id IN (SELECT original_post_id FROM target WHERE original_post_id IS NOT NULL)
+    )
     DELETE FROM list
     WHERE id = $1 AND user_id = $2
     RETURNING *;

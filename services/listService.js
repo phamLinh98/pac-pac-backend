@@ -1,6 +1,19 @@
 import * as listDAL from "../DAL/listDAL.js";
 import * as storageService from "./storageService.js";
 
+const attachShareDetails = async (rows) => Promise.all(rows.map(async (row) => {
+  if (!row?.is_shared_post || !row.original_post_exists) return row;
+  const original = await storageService.attachSignedUrlsToPost({ content: row.original_content });
+  return {
+    ...row,
+    original_content: original.content,
+    original_author_avatar: await storageService.resolveStoredImageUrl(row.original_author_avatar),
+  };
+}));
+
+const preparePosts = async (rows) =>
+  attachShareDetails(await storageService.attachSignedUrlsToPosts(rows));
+
 /**
  * Lấy toàn bộ bài viết.
  */
@@ -11,9 +24,7 @@ export const getList = async (viewerUserId) => {
    * Chuyển object key trong content.image
    * thành signed URL trước khi trả cho frontend.
    */
-  return storageService.attachSignedUrlsToPosts(
-    rows
-  );
+  return preparePosts(rows);
 };
 
 /**
@@ -33,9 +44,7 @@ export const getListStatusOfOneUser = async (
       userId
     );
 
-  return storageService.attachSignedUrlsToPosts(
-    rows
-  );
+  return preparePosts(rows);
 };
 
 /**
@@ -57,9 +66,7 @@ export const getListUserStatusByUserId = async (
       viewerUserId
     );
 
-  return storageService.attachSignedUrlsToPosts(
-    rows
-  );
+  return preparePosts(rows);
 };
 
 /**
