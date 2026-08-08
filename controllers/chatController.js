@@ -55,6 +55,21 @@ export const sendMessage = async (req, res) => {
   } catch (error) { return fail(res, error, 'Không thể gửi tin nhắn'); }
 };
 
+export const sendImageMessage = async (req, res) => {
+  try {
+    const chatId = Number(req.params.id);
+    const userId = authId(req);
+    const caption = typeof req.body?.caption === 'string' ? req.body.caption.trim() : '';
+    if (!positiveId(chatId) || !req.file || caption.length > 2000) {
+      return res.status(400).json({ message: 'Ảnh hoặc nội dung đi kèm không hợp lệ' });
+    }
+    if (!(await chatService.canAccessChat(chatId, userId))) {
+      return res.status(403).json({ message: 'Bạn không thuộc cuộc trò chuyện này' });
+    }
+    return res.status(201).json(await chatService.sendImageMessage(chatId, userId, req.file, caption));
+  } catch (error) { return fail(res, error, 'Không thể gửi ảnh'); }
+};
+
 export const markRead = async (req, res) => {
   try {
     const updated = await chatService.markChatRead(Number(req.params.id), authId(req), Number(req.body?.messageId));

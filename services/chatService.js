@@ -25,6 +25,7 @@ export const getMessages = async (...args) => {
   return Promise.all(rows.reverse().map(async (row) => ({
     ...row,
     sender_avatar: await storageService.resolveStoredImageUrl(row.sender_avatar),
+    media_url: await storageService.resolveStoredImageUrl(row.media_url),
   })));
 };
 export const sendMessage = async (...args) => {
@@ -34,6 +35,22 @@ export const sendMessage = async (...args) => {
     ...row,
     sender_avatar: await storageService.resolveStoredImageUrl(row.sender_avatar),
   };
+};
+export const canAccessChat = (...args) => chatDAL.canAccessChat(...args);
+export const sendImageMessage = async (chatId, userId, file, caption = '') => {
+  const mediaKey = await storageService.uploadChatImage(chatId, userId, file);
+  try {
+    const row = await chatDAL.sendImageMessage(chatId, userId, mediaKey, caption);
+    if (!row) throw new Error('Không thể tạo tin nhắn ảnh');
+    return {
+      ...row,
+      media_url: await storageService.resolveStoredImageUrl(row.media_url),
+      sender_avatar: await storageService.resolveStoredImageUrl(row.sender_avatar),
+    };
+  } catch (error) {
+    await storageService.deleteChatImage(mediaKey).catch(() => undefined);
+    throw error;
+  }
 };
 export const markChatRead = (...args) => chatDAL.markChatRead(...args);
 export const addGroupMembers = (...args) => chatDAL.addGroupMembers(...args);

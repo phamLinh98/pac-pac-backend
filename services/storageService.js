@@ -202,6 +202,29 @@ const createProfileImageKey = (userId, imageType, file) => [
   `${Date.now()}-${crypto.randomUUID()}${getFileExtension(file)}`,
 ].join("/");
 
+const createChatImageKey = (chatId, userId, file) => [
+  "chats",
+  chatId,
+  userId,
+  `${Date.now()}-${crypto.randomUUID()}${getFileExtension(file)}`,
+].join("/");
+
+export const uploadChatImage = async (chatId, userId, file) => {
+  if (!Number.isInteger(Number(chatId)) || !Number.isInteger(Number(userId)) || !file?.buffer) {
+    throw new Error("Thông tin ảnh chat không hợp lệ");
+  }
+  const key = createChatImageKey(chatId, userId, file);
+  await uploadObjectToStorage({
+    key,
+    body: file.buffer,
+    contentType: file.mimetype,
+    metadata: { chatId: String(chatId), userId: String(userId), type: "chat-image" },
+  });
+  return key;
+};
+
+export const deleteChatImage = (key) => deleteObjectFromStorage(key);
+
 export const uploadProfileImage = async (userId, imageType, file) => {
   if (!Number.isInteger(Number(userId)) || !["avatar", "background"].includes(imageType)) {
     throw new Error("Thông tin ảnh profile không hợp lệ");

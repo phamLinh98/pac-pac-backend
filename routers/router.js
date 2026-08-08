@@ -75,6 +75,14 @@ router.post('/chats/direct', checkTokenMiddleware, chatController.createDirectCh
 router.post('/chats/group', checkTokenMiddleware, chatController.createGroupChat);
 router.get('/chats/:id/messages', checkTokenMiddleware, chatController.getMessages);
 router.post('/chats/:id/messages', checkTokenMiddleware, chatController.sendMessage);
+router.post(
+  '/chats/:id/images',
+  checkTokenMiddleware,
+  uploadLimiter,
+  uploadPostImagesMiddleware.single('image'),
+  validateUploadedImages,
+  chatController.sendImageMessage
+);
 router.patch('/chats/:id/read', checkTokenMiddleware, chatController.markRead);
 router.post('/chats/:id/members', checkTokenMiddleware, chatController.addMembers);
 router.delete('/chats/:id/members/me', checkTokenMiddleware, chatController.leaveGroup);

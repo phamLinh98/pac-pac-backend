@@ -123,6 +123,32 @@ export const sendMessage = (chatId, userId, message) => ({
   values: [chatId, userId, message],
 });
 
+export const canAccessChat = (chatId, userId) => ({
+  query: `SELECT EXISTS (
+    SELECT 1 FROM chat_member
+    WHERE chat_id = $1 AND user_id = $2 AND left_at IS NULL
+  ) AS can_access`,
+  values: [chatId, userId],
+});
+
+export const sendImageMessage = (chatId, userId, mediaKey, caption) => ({
+  query: `
+    WITH inserted AS (
+      INSERT INTO chat_message (chat_id, sender_id, message, message_type, media_url)
+      SELECT $1, $2, NULLIF($4, ''), 'IMAGE', $3
+      WHERE EXISTS (
+        SELECT 1 FROM chat_member cm
+        WHERE cm.chat_id = $1 AND cm.user_id = $2 AND cm.left_at IS NULL
+      ) RETURNING *
+    ), touched AS (
+      UPDATE chat SET updated_at = NOW() WHERE id IN (SELECT chat_id FROM inserted)
+    )
+    SELECT inserted.*, u.name AS sender_name, u.avatar AS sender_avatar
+    FROM inserted JOIN public."user" u ON u.id = inserted.sender_id
+  `,
+  values: [chatId, userId, mediaKey, caption],
+});
+
 export const markChatRead = (chatId, userId, messageId) => ({
   query: `
     UPDATE chat_member cm
