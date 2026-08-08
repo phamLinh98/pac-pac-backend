@@ -141,3 +141,14 @@ export const cancelFriendRequest = async (senderId, receiverId) => {
     const { query, values } = userModel.cancelFriendRequest(senderId, receiverId);
     return sql(query, values);
 }
+
+export const updateLastActive = async (userId) => {
+    const { query, values } = userModel.updateLastActive(userId);
+    const [row] = await sql(query, values);
+    return row;
+};
+
+export const getFriendPresence = async (userId) => {
+    const { query, values } = userModel.getFriendPresence(userId);
+    return sql(query, values);
+};

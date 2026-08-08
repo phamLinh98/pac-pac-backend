@@ -454,3 +454,23 @@ export const cancelFriendRequest = async (req, res) => {
         });
     }
 };
+
+export const heartbeat = async (req, res) => {
+    try {
+        const result = await userService.updateLastActive(Number(req.checkAccessToken?.id));
+        return res.status(200).json(result);
+    } catch (error) {
+        console.error('presence heartbeat error:', error);
+        return res.status(500).json({ message: 'Không thể cập nhật trạng thái hoạt động' });
+    }
+};
+
+export const getFriendPresence = async (req, res) => {
+    try {
+        const result = await userService.getFriendPresence(Number(req.checkAccessToken?.id));
+        return res.status(200).json(result);
+    } catch (error) {
+        console.error('friend presence error:', error);
+        return res.status(500).json({ message: 'Không thể tải trạng thái bạn bè' });
+    }
+};

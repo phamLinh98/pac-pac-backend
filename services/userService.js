@@ -158,3 +158,10 @@ export const cancelFriendship = async (userId, friendId) => {
 export const cancelFriendRequest = async (senderId, receiverId) => {
     return userDAL.cancelFriendRequest(senderId, receiverId);
 }
+
+export const updateLastActive = (userId) => userDAL.updateLastActive(userId);
+
+export const getFriendPresence = async (userId) => {
+    const rows = await userDAL.getFriendPresence(userId);
+    return Promise.all(rows.map(storageService.attachProfileImageUrls));
+};

@@ -388,3 +388,28 @@ export const cancelFriendRequest = (senderId, receiverId) => ({
   `,
   values: [senderId, receiverId],
 });
+
+export const updateLastActive = (userId) => ({
+  query: `
+    UPDATE public."user" SET last_active_at = NOW() WHERE id = $1
+    RETURNING last_active_at
+  `,
+  values: [userId],
+});
+
+export const getFriendPresence = (userId) => ({
+  query: `
+    SELECT
+      friend.id,
+      friend.name,
+      friend.avatar,
+      friend.last_active_at,
+      (friend.last_active_at >= NOW() - INTERVAL '10 minutes') AS is_online
+    FROM public."user" owner
+    CROSS JOIN LATERAL UNNEST(COALESCE(owner.list_friend_id, ARRAY[]::BIGINT[])) friend_id(id)
+    JOIN public."user" friend ON friend.id = friend_id.id
+    WHERE owner.id = $1
+    ORDER BY is_online DESC, friend.name ASC
+  `,
+  values: [userId],
+});
