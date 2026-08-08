@@ -57,7 +57,14 @@ router.post("/send-friend-request", checkTokenMiddleware, userController.sendFri
 router.delete("/friendship/:id", checkTokenMiddleware, userController.cancelFriendship);
 router.delete("/friend-request/:id", checkTokenMiddleware, userController.cancelFriendRequest);
 
-router.post("/add-comment/:userId/:listId", checkTokenMiddleware, commentController.addComment);
+router.post(
+  "/add-comment/:userId/:listId",
+  checkTokenMiddleware,
+  uploadLimiter,
+  uploadPostImagesMiddleware.single("image"),
+  validateUploadedImages,
+  commentController.addComment
+);
 router.post('/posts/:postId/like', checkTokenMiddleware, likeController.togglePostLike);
 router.post('/posts/:postId/share', checkTokenMiddleware, shareController.sharePost);
 router.get(

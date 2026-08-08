@@ -45,12 +45,12 @@ export const addComment = async (req, res) => {
         if (!Number.isInteger(userId) || !Number.isInteger(listId) || listId <= 0) {
             return res.status(400).json({ message: 'User hoặc bài viết không hợp lệ' });
         }
-        if (!content || content.length > 2000) {
-            return res.status(400).json({ message: 'Bình luận phải từ 1 đến 2000 ký tự' });
+        if ((!content && !req.file) || content.length > 2000) {
+            return res.status(400).json({ message: 'Bình luận cần nội dung hoặc ảnh và tối đa 2000 ký tự' });
         }
 
         // Thêm comment vào cơ sở dữ liệu
-        const newComment = await commentService.addComment(userId, listId, content);
+        const newComment = await commentService.addComment(userId, listId, content, req.file);
 
         // Trả về dữ liệu comment mới dưới dạng JSON
         res.status(200).json(newComment);
@@ -60,4 +60,3 @@ export const addComment = async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 }
-

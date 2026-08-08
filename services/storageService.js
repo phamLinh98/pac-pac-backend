@@ -209,6 +209,29 @@ const createChatImageKey = (chatId, userId, file) => [
   `${Date.now()}-${crypto.randomUUID()}${getFileExtension(file)}`,
 ].join("/");
 
+const createCommentImageKey = (postId, userId, file) => [
+  "comments",
+  postId,
+  userId,
+  `${Date.now()}-${crypto.randomUUID()}${getFileExtension(file)}`,
+].join("/");
+
+export const uploadCommentImage = async (postId, userId, file) => {
+  if (!Number.isInteger(Number(postId)) || !Number.isInteger(Number(userId)) || !file?.buffer) {
+    throw new Error("Thông tin ảnh bình luận không hợp lệ");
+  }
+  const key = createCommentImageKey(postId, userId, file);
+  await uploadObjectToStorage({
+    key,
+    body: file.buffer,
+    contentType: file.mimetype,
+    metadata: { postId: String(postId), userId: String(userId), type: "comment-image" },
+  });
+  return key;
+};
+
+export const deleteCommentImage = (key) => deleteObjectFromStorage(key);
+
 export const uploadChatImage = async (chatId, userId, file) => {
   if (!Number.isInteger(Number(chatId)) || !Number.isInteger(Number(userId)) || !file?.buffer) {
     throw new Error("Thông tin ảnh chat không hợp lệ");

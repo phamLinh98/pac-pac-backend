@@ -19,16 +19,17 @@ export const getCommentByListId = (listId) => {
     return { query, values };
 };
 
-export const addComment = (userId, listId, content) => {
+export const addComment = (userId, listId, content, imageKey) => {
   const query = `
     WITH new_comment AS (
       INSERT INTO comment (
       list_id,
       user_id,
       content,
+      image_key,
       created_at
       )
-      VALUES ($1, $2, $3, NOW())
+      VALUES ($1, $2, NULLIF($3, ''), $4, NOW())
       RETURNING *
     ), updated_post AS (
       UPDATE list
@@ -58,7 +59,7 @@ export const addComment = (userId, listId, content) => {
     FROM new_comment nc
   `;
 
-  const values = [listId, userId, content];
+  const values = [listId, userId, content, imageKey];
 
   return { query, values };
 };
