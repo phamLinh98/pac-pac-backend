@@ -4,6 +4,7 @@ import * as storyController from '../controllers/storyController.js';
 import * as commentController from '../controllers/commentController.js';
 import * as userController from '../controllers/userController.js';
 import * as notificationController from '../controllers/notificationController.js';
+import * as chatController from '../controllers/chatController.js';
 import { checkTokenMiddleware } from '../middlewares/checkTokenNotValid.js';
 import {
   uploadPostImagesMiddleware,
@@ -65,6 +66,14 @@ router.patch(
   checkTokenMiddleware,
   notificationController.markAllCommentNotificationsAsRead
 );
+router.get('/chats', checkTokenMiddleware, chatController.getChats);
+router.post('/chats/direct', checkTokenMiddleware, chatController.createDirectChat);
+router.post('/chats/group', checkTokenMiddleware, chatController.createGroupChat);
+router.get('/chats/:id/messages', checkTokenMiddleware, chatController.getMessages);
+router.post('/chats/:id/messages', checkTokenMiddleware, chatController.sendMessage);
+router.patch('/chats/:id/read', checkTokenMiddleware, chatController.markRead);
+router.post('/chats/:id/members', checkTokenMiddleware, chatController.addMembers);
+router.delete('/chats/:id/members/me', checkTokenMiddleware, chatController.leaveGroup);
 router.patch(
   "/notifications/:id/read",
   checkTokenMiddleware,
