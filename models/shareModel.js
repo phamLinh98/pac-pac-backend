@@ -1,4 +1,4 @@
-export const sharePost = (requestedPostId, userId) => ({
+export const sharePost = (requestedPostId, userId, shareText) => ({
   query: `
     WITH requested AS (
       SELECT * FROM list WHERE id = $1
@@ -8,7 +8,7 @@ export const sharePost = (requestedPostId, userId) => ({
       WHERE requested.share_snapshot IS NULL OR requested.original_post_id IS NOT NULL
     ), created_share AS (
       INSERT INTO list (user_id, content, "like", shared, comment, created_at, original_post_id, share_snapshot)
-      SELECT $2, '{"text":"","image":[]}'::jsonb, 0, 0, 0, NOW(), source.id,
+      SELECT $2, jsonb_build_object('text', $3::text, 'image', '[]'::jsonb), 0, 0, 0, NOW(), source.id,
         jsonb_build_object(
           'original_post_id', source.id, 'author_id', source.user_id,
           'author_name', author.name, 'author_avatar', author.avatar,
@@ -31,5 +31,5 @@ export const sharePost = (requestedPostId, userId) => ({
       updated_source.shared::int AS share_count
     FROM created_share JOIN updated_source ON updated_source.id = created_share.original_post_id
   `,
-  values: [requestedPostId, userId],
+  values: [requestedPostId, userId, shareText],
 });
