@@ -21,14 +21,36 @@ export const getCommentByListId = (listId) => {
 
 export const addComment = (userId, listId, content) => {
   const query = `
-    INSERT INTO comment (
+    WITH new_comment AS (
+      INSERT INTO comment (
       list_id,
       user_id,
       content,
       created_at
+      )
+      VALUES ($1, $2, $3, NOW())
+      RETURNING *
+    ), new_notification AS (
+      INSERT INTO notification_message (
+        receiver_user_id,
+        sender_user_id,
+        post_id,
+        comment_id,
+        notification_type
+      )
+      SELECT
+        l.user_id,
+        $2,
+        l.id,
+        nc.id,
+        'COMMENT'
+      FROM list l
+      CROSS JOIN new_comment nc
+      WHERE l.id = $1 AND l.user_id <> $2
+      RETURNING id
     )
-    VALUES ($1, $2, $3, NOW())
-    RETURNING *
+    SELECT nc.*
+    FROM new_comment nc
   `;
 
   const values = [listId, userId, content];

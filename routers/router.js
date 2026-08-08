@@ -3,6 +3,7 @@ import * as listController from '../controllers/listController.js';
 import * as storyController from '../controllers/storyController.js';
 import * as commentController from '../controllers/commentController.js';
 import * as userController from '../controllers/userController.js';
+import * as notificationController from '../controllers/notificationController.js';
 import { checkTokenMiddleware } from '../middlewares/checkTokenNotValid.js';
 import {
   uploadPostImagesMiddleware,
@@ -54,6 +55,21 @@ router.delete("/friendship/:id", checkTokenMiddleware, userController.cancelFrie
 router.delete("/friend-request/:id", checkTokenMiddleware, userController.cancelFriendRequest);
 
 router.post("/add-comment/:userId/:listId", checkTokenMiddleware, commentController.addComment);
+router.get(
+  "/notifications/comments",
+  checkTokenMiddleware,
+  notificationController.getCommentNotifications
+);
+router.patch(
+  "/notifications/read-all",
+  checkTokenMiddleware,
+  notificationController.markAllCommentNotificationsAsRead
+);
+router.patch(
+  "/notifications/:id/read",
+  checkTokenMiddleware,
+  notificationController.markNotificationAsRead
+);
 router.post(
   "/upload-post-images",
   checkTokenMiddleware,
