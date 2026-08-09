@@ -36,6 +36,7 @@ router.delete('/story/:id', checkTokenMiddleware, storyController.deleteStory);
 router.get('/comment', checkTokenMiddleware, commentController.getComment);
 router.get('/comment/:id', checkTokenMiddleware, commentController.getCommentByListId);
 router.get('/send-friend/:id', checkTokenMiddleware, userController.getListSendFriend);
+router.get('/friend-requests', checkTokenMiddleware, userController.getMyFriendRequests);
 
 //Test
 router.get('/user/:id', checkTokenMiddleware, userController.getUserFriendOfLoginUser);

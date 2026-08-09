@@ -106,16 +106,12 @@ export const userOwnsMediaKey = (userId, imageKey) =>
     userDAL.userOwnsMediaKey(userId, imageKey);
 
 export const getListSendFriend = async (userId) => {
-    try {
-        const rows = await userDAL.getListSendFriend(userId);
-        return Promise.all(rows.map(async (row) => ({
-            ...row,
-            sender_avatar: await storageService.resolveStoredImageUrl(row.sender_avatar),
-            receiver_avatar: await storageService.resolveStoredImageUrl(row.receiver_avatar),
-        })));
-    } catch (error) {
-        console.log('error', error);
-    }
+    const rows = await userDAL.getListSendFriend(userId);
+    return Promise.all(rows.map(async (row) => ({
+        ...row,
+        sender_avatar: await storageService.resolveStoredImageUrl(row.sender_avatar),
+        receiver_avatar: await storageService.resolveStoredImageUrl(row.receiver_avatar),
+    })));
 }
 
 export const updateAddFriend = async (userId, userId2) => {

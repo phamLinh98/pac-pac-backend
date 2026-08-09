@@ -273,6 +273,17 @@ export const getListSendFriend = async (req, res) => {
     }
 }
 
+export const getMyFriendRequests = async (req, res) => {
+    try {
+        const userId = Number(req.checkAccessToken?.id);
+        const requests = await userService.getListSendFriend(userId);
+        return res.status(200).json(Array.isArray(requests) ? requests : []);
+    } catch (error) {
+        console.error('getMyFriendRequests error:', error);
+        return res.status(500).json({ message: 'Không thể tải lời mời kết bạn' });
+    }
+};
+
 export const updateAddFriend = async (req, res) => {
     try {
         const userIdSecond = req.params.id;
