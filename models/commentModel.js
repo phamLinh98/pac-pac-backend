@@ -2,12 +2,13 @@ export const getComment = () => `SELECT * FROM comment`;
 
 export const getCommentByListId = (listId, viewerUserId) => ({
   query: `
-    SELECT c.*, u.name AS user_name, u.avatar,
+    SELECT c.*, u.name AS user_name, ui.avatar,
       COALESCE(likes.like_count, 0)::INTEGER AS like_count,
       COALESCE(likes.is_liked, FALSE) AS is_liked,
       COALESCE(mentions.users, '[]'::JSON) AS mentions
     FROM comment c
     JOIN public."user" u ON u.id = c.user_id
+    LEFT JOIN public.user_image ui ON ui.user_id = u.id
     LEFT JOIN LATERAL (
       SELECT COUNT(*) AS like_count,
         BOOL_OR(cl.user_id = $2) AS is_liked

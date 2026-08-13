@@ -12,10 +12,11 @@ export const getCommentNotifications = (receiverUserId, limit = 30) => ({
       n.updated_at,
       post.user_id AS post_owner_user_id,
       sender.name AS sender_name,
-      sender.avatar AS sender_avatar,
+      sender_image.avatar AS sender_avatar,
       c.content AS comment_content
     FROM notification_message n
     JOIN public."user" sender ON sender.id = n.sender_user_id
+    LEFT JOIN public.user_image sender_image ON sender_image.user_id = sender.id
     LEFT JOIN comment c ON c.id = n.comment_id
     LEFT JOIN list post ON post.id = n.post_id
     WHERE n.receiver_user_id = $1

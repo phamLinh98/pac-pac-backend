@@ -9,10 +9,11 @@ export const getStory = () => {
       story.created_at,
       story.image_url AS image_key,
       user_account.name AS user_name,
-      COALESCE(story.avatar, user_account.avatar) AS avatar
+      COALESCE(story.avatar, user_image.avatar) AS avatar
     FROM story
     JOIN "public"."user" AS user_account
       ON story.user_id = user_account.id
+    LEFT JOIN "public"."user_image" AS user_image ON user_image.user_id = user_account.id
     WHERE COALESCE(
       story.expires_at,
       story.created_at + INTERVAL '24 hours'
@@ -34,8 +35,9 @@ export const createStory = (userId, imageKey) => ({
         $1,
         $2,
         NOW() + INTERVAL '24 hours',
-        user_account.avatar
+        user_image.avatar
       FROM "public"."user" AS user_account
+      LEFT JOIN "public"."user_image" AS user_image ON user_image.user_id = user_account.id
       WHERE user_account.id = $1
       RETURNING *
     )
@@ -48,10 +50,11 @@ export const createStory = (userId, imageKey) => ({
       inserted_story.created_at,
       inserted_story.image_url AS image_key,
       user_account.name AS user_name,
-      COALESCE(inserted_story.avatar, user_account.avatar) AS avatar
+      COALESCE(inserted_story.avatar, user_image.avatar) AS avatar
     FROM inserted_story
     JOIN "public"."user" AS user_account
-      ON inserted_story.user_id = user_account.id;
+      ON inserted_story.user_id = user_account.id
+    LEFT JOIN "public"."user_image" AS user_image ON user_image.user_id = user_account.id;
   `,
   values: [userId, imageKey],
 });

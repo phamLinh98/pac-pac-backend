@@ -11,10 +11,11 @@ export const sharePost = (requestedPostId, userId, shareText) => ({
       SELECT $2, jsonb_build_object('text', $3::text, 'image', '[]'::jsonb), 0, 0, 0, NOW(), source.id,
         jsonb_build_object(
           'original_post_id', source.id, 'author_id', source.user_id,
-          'author_name', author.name, 'author_avatar', author.avatar,
+          'author_name', author.name, 'author_avatar', author_image.avatar,
           'content', source.content, 'created_at', source.created_at
         )
       FROM source JOIN public."user" author ON author.id = source.user_id
+      LEFT JOIN public.user_image author_image ON author_image.user_id = author.id
       RETURNING *
     ), updated_source AS (
       UPDATE list

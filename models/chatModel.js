@@ -26,11 +26,12 @@ export const getChats = (userId) => ({
     ) unread ON TRUE
     LEFT JOIN LATERAL (
       SELECT jsonb_agg(jsonb_build_object(
-        'user_id', cm.user_id, 'name', u.name, 'avatar', u.avatar,
+        'user_id', cm.user_id, 'name', u.name, 'avatar', ui.avatar,
         'member_role', cm.member_role
       ) ORDER BY cm.joined_at) AS members
       FROM chat_member cm
       JOIN public."user" u ON u.id = cm.user_id
+      LEFT JOIN public.user_image ui ON ui.user_id = u.id
       WHERE cm.chat_id = c.id AND cm.left_at IS NULL
     ) members ON TRUE
     WHERE me.user_id = $1 AND me.left_at IS NULL
@@ -90,9 +91,10 @@ export const getMessages = (chatId, userId, beforeId, limit) => ({
   query: `
     SELECT m.id, m.chat_id, m.sender_id, m.message, m.message_type,
       m.media_url, m.reply_to_message_id, m.is_deleted, m.created_at, m.updated_at,
-      u.name AS sender_name, u.avatar AS sender_avatar
+      u.name AS sender_name, ui.avatar AS sender_avatar
     FROM chat_message m
     LEFT JOIN public."user" u ON u.id = m.sender_id
+    LEFT JOIN public.user_image ui ON ui.user_id = u.id
     WHERE m.chat_id = $1
       AND ($3::bigint IS NULL OR m.id < $3)
       AND EXISTS (
@@ -117,8 +119,9 @@ export const sendMessage = (chatId, userId, message) => ({
       UPDATE chat SET updated_at = NOW()
       WHERE id IN (SELECT chat_id FROM inserted)
     )
-    SELECT inserted.*, u.name AS sender_name, u.avatar AS sender_avatar
+    SELECT inserted.*, u.name AS sender_name, ui.avatar AS sender_avatar
     FROM inserted JOIN public."user" u ON u.id = inserted.sender_id
+    LEFT JOIN public.user_image ui ON ui.user_id = u.id
   `,
   values: [chatId, userId, message],
 });
@@ -143,8 +146,9 @@ export const sendImageMessage = (chatId, userId, mediaKey, caption) => ({
     ), touched AS (
       UPDATE chat SET updated_at = NOW() WHERE id IN (SELECT chat_id FROM inserted)
     )
-    SELECT inserted.*, u.name AS sender_name, u.avatar AS sender_avatar
+    SELECT inserted.*, u.name AS sender_name, ui.avatar AS sender_avatar
     FROM inserted JOIN public."user" u ON u.id = inserted.sender_id
+    LEFT JOIN public.user_image ui ON ui.user_id = u.id
   `,
   values: [chatId, userId, mediaKey, caption],
 });

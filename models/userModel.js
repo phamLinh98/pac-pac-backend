@@ -1,8 +1,11 @@
 export const finUserViaUserId = (userId) => {
   const query = `
-      SELECT id, name, email, avatar, namecode, list_friend_id, background
-      FROM "public"."user"
-      WHERE id = $1
+      SELECT u.id, u.name, u.email, ui.avatar, u.namecode, u.list_friend_id, ui.background,
+             info.address, info.education, info.bios
+      FROM "public"."user" u
+      LEFT JOIN "public"."user_image" ui ON ui.user_id = u.id
+      LEFT JOIN "public"."user_info" info ON info.user_id = u.id
+      WHERE u.id = $1
       LIMIT 1
   `;
   const values = [userId];
@@ -14,7 +17,7 @@ export const getListFriendViaUserId = (userId) => {
     SELECT
       friend_account.id,
       friend_account.name,
-      friend_account.avatar,
+      friend_image.avatar,
       friend_account.namecode,
       friend_account.list_friend_id
     FROM "public"."user" AS profile_user
@@ -23,6 +26,7 @@ export const getListFriendViaUserId = (userId) => {
     ) AS friend_id(id)
     JOIN "public"."user" AS friend_account
       ON friend_account.id = friend_id.id
+    LEFT JOIN "public"."user_image" AS friend_image ON friend_image.user_id = friend_account.id
     WHERE profile_user.id = $1
     ORDER BY friend_account.name ASC;
   `;
@@ -31,28 +35,30 @@ export const getListFriendViaUserId = (userId) => {
 };
 
 export const getUserFriendOfLoginUser = (userId) => {
-  const query = `SELECT id, name, avatar, list_friend_id
-                 FROM "public"."user"
-                 WHERE id != $1 `;
+  const query = `SELECT u.id, u.name, ui.avatar, u.list_friend_id
+                 FROM "public"."user" u
+                 LEFT JOIN "public"."user_image" ui ON ui.user_id = u.id
+                 WHERE u.id != $1 `;
   const values = [userId];
   return { query, values };
 };
 
 export const searchUsers = (keyword, loginUserId) => ({
   query: `
-    SELECT id, name, avatar, namecode
-    FROM "public"."user"
-    WHERE id <> $2
+    SELECT u.id, u.name, ui.avatar, u.namecode
+    FROM "public"."user" u
+    LEFT JOIN "public"."user_image" ui ON ui.user_id = u.id
+    WHERE u.id <> $2
       AND (
-        name ILIKE '%' || $1 || '%'
-        OR COALESCE(namecode, '') ILIKE '%' || $1 || '%'
+        u.name ILIKE '%' || $1 || '%'
+        OR COALESCE(u.namecode, '') ILIKE '%' || $1 || '%'
       )
     ORDER BY
       CASE
-        WHEN name ILIKE $1 || '%' THEN 0
+        WHEN u.name ILIKE $1 || '%' THEN 0
         ELSE 1
       END,
-      name ASC
+      u.name ASC
     LIMIT 10;
   `,
   values: [keyword, loginUserId],
@@ -60,10 +66,11 @@ export const searchUsers = (keyword, loginUserId) => ({
 
 export const updateProfileImage = (userId, imageType, imageKey) => ({
   query: `
-    UPDATE "public"."user"
-    SET ${imageType === "avatar" ? "avatar" : "background"} = $2, updated_at = NOW()
-    WHERE id = $1
-    RETURNING id, name, email, avatar, background, namecode, list_friend_id
+    INSERT INTO "public"."user_image" (user_id, ${imageType === "avatar" ? "avatar" : "background"})
+    VALUES ($1, $2)
+    ON CONFLICT (user_id) DO UPDATE
+    SET ${imageType === "avatar" ? "avatar" : "background"} = EXCLUDED.${imageType === "avatar" ? "avatar" : "background"}, updated_at = NOW()
+    RETURNING user_id AS id, avatar, background
   `,
   values: [userId, imageKey],
 });
@@ -84,7 +91,7 @@ export const getProfileMedia = (userId) => ({
       SELECT image_url AS image_key FROM story WHERE user_id = $1
       UNION ALL
       SELECT unnest(ARRAY[avatar, background]) AS image_key
-      FROM "public"."user" WHERE id = $1
+      FROM "public"."user_image" WHERE user_id = $1
     ) AS media
     WHERE media.image_key IS NOT NULL AND media.image_key <> ''
     ORDER BY media.image_key
@@ -102,8 +109,8 @@ export const userOwnsMediaKey = (userId, imageKey) => ({
       UNION ALL
       SELECT 1 FROM story WHERE user_id = $1 AND image_url = $2
       UNION ALL
-      SELECT 1 FROM "public"."user"
-      WHERE id = $1 AND (avatar = $2 OR background = $2)
+      SELECT 1 FROM "public"."user_image"
+      WHERE user_id = $1 AND (avatar = $2 OR background = $2)
     ) AS owns_media
   `,
   values: [userId, imageKey],
@@ -114,14 +121,16 @@ export const getListSendFriend = (userId) => {
     SELECT
       friend_request.*,
       sender.name AS sender_name,
-      sender.avatar AS sender_avatar,
+      sender_image.avatar AS sender_avatar,
       receiver.name AS receiver_name,
-      receiver.avatar AS receiver_avatar
+      receiver_image.avatar AS receiver_avatar
     FROM "public"."friend_requests" AS friend_request
     JOIN "public"."user" AS sender
       ON sender.id = friend_request.sender_id
     JOIN "public"."user" AS receiver
       ON receiver.id = friend_request.receiver_id
+    LEFT JOIN "public"."user_image" sender_image ON sender_image.user_id = sender.id
+    LEFT JOIN "public"."user_image" receiver_image ON receiver_image.user_id = receiver.id
     WHERE friend_request.sender_id = $1::BIGINT
        OR friend_request.receiver_id = $1::BIGINT
     ORDER BY friend_request.updated_at DESC`;
@@ -330,12 +339,13 @@ export const getFriendPresence = (userId) => ({
     SELECT
       friend.id,
       friend.name,
-      friend.avatar,
+      friend_image.avatar,
       friend.last_active_at,
       (friend.last_active_at >= NOW() - INTERVAL '10 minutes') AS is_online
     FROM public."user" owner
     CROSS JOIN LATERAL UNNEST(COALESCE(owner.list_friend_id, ARRAY[]::BIGINT[])) friend_id(id)
     JOIN public."user" friend ON friend.id = friend_id.id
+    LEFT JOIN public.user_image friend_image ON friend_image.user_id = friend.id
     WHERE owner.id = $1
     ORDER BY is_online DESC, friend.name ASC
   `,
