@@ -1,9 +1,9 @@
 import { authServiceBaseUrl, authServiceTimeoutMs } from "../configs/authServiceConfig.js";
 
-const forward = (path) => async (req, res) => {
+const forward = (method, path) => async (req, res) => {
   try {
     const upstream = await fetch(`${authServiceBaseUrl}${path}`, {
-      method: "POST",
+      method,
       headers: { "content-type": "application/json", ...(req.headers.cookie ? { cookie: req.headers.cookie } : {}) },
       body: JSON.stringify(req.body ?? {}),
       signal: AbortSignal.timeout(authServiceTimeoutMs),
@@ -17,7 +17,8 @@ const forward = (path) => async (req, res) => {
   }
 };
 
-export const login = forward("/api/v1/auth/login");
-export const register = forward("/api/v1/auth/register");
-export const logout = forward("/api/v1/auth/logout");
-export const refresh = forward("/api/v1/auth/refresh");
+export const login = forward("POST", "/api/v1/auth/login");
+export const register = forward("POST", "/api/v1/auth/register");
+export const logout = forward("POST", "/api/v1/auth/logout");
+export const refresh = forward("POST", "/api/v1/auth/refresh");
+export const updateAccount = forward("PATCH", "/api/v1/auth/me");

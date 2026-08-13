@@ -54,6 +54,7 @@ router.put(
 router.post('/login', loginLimiter, authProxyController.login);
 router.post('/logout', authProxyController.logout);
 router.post('/refesh-token', authProxyController.refresh);
+router.patch('/account', checkTokenMiddleware, authProxyController.updateAccount);
 router.get('/list-friend/:id', checkTokenMiddleware, userController.getListFriendViaUserId);
 router.post('/presence/heartbeat', checkTokenMiddleware, userController.heartbeat);
 router.get('/friends/presence', checkTokenMiddleware, userController.getFriendPresence);
