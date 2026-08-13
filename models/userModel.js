@@ -75,6 +75,20 @@ export const updateProfileImage = (userId, imageType, imageKey) => ({
   values: [userId, imageKey],
 });
 
+export const updateProfileInfo = (userId, { address, education, bios }) => ({
+  query: `
+    INSERT INTO public.user_info (user_id, address, education, bios)
+    VALUES ($1, $2, $3, $4)
+    ON CONFLICT (user_id) DO UPDATE SET
+      address = EXCLUDED.address,
+      education = EXCLUDED.education,
+      bios = EXCLUDED.bios,
+      updated_at = NOW()
+    RETURNING user_id, address, education, bios, updated_at
+  `,
+  values: [userId, address, education, bios],
+});
+
 export const getProfileMedia = (userId) => ({
   query: `
     SELECT DISTINCT media.image_key

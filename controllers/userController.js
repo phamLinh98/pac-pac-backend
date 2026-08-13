@@ -109,6 +109,36 @@ export const updateProfileImage = async (req, res) => {
     }
 };
 
+export const updateProfileInfo = async (req, res) => {
+    try {
+        const userId = Number(req.checkAccessToken?.id);
+        const fields = {
+            address: req.body?.address,
+            education: req.body?.education,
+            bios: req.body?.bios,
+        };
+
+        if (Object.values(fields).some((value) => typeof value !== 'string')) {
+            return res.status(400).json({ message: 'Thông tin profile không hợp lệ' });
+        }
+
+        const profileInfo = {
+            address: fields.address.trim(),
+            education: fields.education.trim(),
+            bios: fields.bios.trim(),
+        };
+        if (profileInfo.address.length > 500 || profileInfo.education.length > 255 || profileInfo.bios.length > 2000) {
+            return res.status(400).json({ message: 'Thông tin profile vượt quá độ dài cho phép' });
+        }
+
+        const updatedProfileInfo = await userService.updateProfileInfo(userId, profileInfo);
+        return res.status(200).json({ message: 'Cập nhật thông tin profile thành công', profileInfo: updatedProfileInfo });
+    } catch (error) {
+        console.error('updateProfileInfo error:', error);
+        return res.status(500).json({ message: 'Không thể cập nhật thông tin profile' });
+    }
+};
+
 export const getListSendFriend = async (req, res) => {
     try {
         const userId = Number(req.params.id);

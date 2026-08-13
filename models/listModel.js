@@ -64,11 +64,15 @@ export const getListStatusOfOneUser = (
       u.name,
       ui.avatar,
       ui.background,
+      info.address,
+      info.education,
+      info.bios,
       u.list_friend_id
     FROM list l
     JOIN public."user" u
       ON l.user_id = u.id
     LEFT JOIN public.user_image ui ON ui.user_id = u.id
+    LEFT JOIN public.user_info info ON info.user_id = u.id
     LEFT JOIN list op ON op.id = l.original_post_id
     LEFT JOIN public."user" ou ON ou.id = op.user_id
     LEFT JOIN public.user_image oui ON oui.user_id = ou.id
@@ -175,9 +179,13 @@ export const getListUserIdWithEmptyContent = (userId) => {
       u.name,
       ui.avatar,
       ui.background,
+      info.address,
+      info.education,
+      info.bios,
       u.list_friend_id
     FROM public."user" u
     LEFT JOIN public.user_image ui ON ui.user_id = u.id
+    LEFT JOIN public.user_info info ON info.user_id = u.id
     WHERE u.id = $1;
   `;
 

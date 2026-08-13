@@ -42,6 +42,9 @@ export const updateProfileImage = async (userId, imageType, imageKey) => {
     return storageService.attachProfileImageUrls(rows[0] ?? null);
 }
 
+export const updateProfileInfo = (userId, profileInfo) =>
+    userDAL.updateProfileInfo(userId, profileInfo);
+
 export const userOwnsMediaKey = (userId, imageKey) =>
     userDAL.userOwnsMediaKey(userId, imageKey);
 

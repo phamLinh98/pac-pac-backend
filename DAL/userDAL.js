@@ -32,6 +32,12 @@ export const updateProfileImage = async(userId, imageType, imageKey) => {
     return rows;
 }
 
+export const updateProfileInfo = async (userId, profileInfo) => {
+    const { query, values } = userModel.updateProfileInfo(userId, profileInfo);
+    const [row] = await sql(query, values);
+    return row;
+}
+
 export const getProfileMedia = async (userId) => {
     const { query, values } = userModel.getProfileMedia(userId);
     return sql(query, values);

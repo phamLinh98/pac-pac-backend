@@ -43,6 +43,7 @@ router.get('/friend-requests', checkTokenMiddleware, userController.getMyFriendR
 router.get('/user/:id', checkTokenMiddleware, userController.getUserFriendOfLoginUser);
 router.get('/search-user', checkTokenMiddleware, userController.searchUsers);
 router.get('/profile-media', checkTokenMiddleware, userController.getProfileMedia);
+router.patch('/profile-info', checkTokenMiddleware, userController.updateProfileInfo);
 router.put(
   '/profile-image',
   checkTokenMiddleware,
