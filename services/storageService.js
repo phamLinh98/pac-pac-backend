@@ -1,18 +1,8 @@
-import crypto from "crypto";
-import path from "path";
-
 import {
-  uploadObjectToStorage,
-  createSignedObjectUrl,
-  deleteObjectFromStorage,
-} from "../configs/s3Config.js";
-
-const extensionByMimeType = {
-  "image/jpeg": ".jpg",
-  "image/png": ".png",
-  "image/webp": ".webp",
-  "image/gif": ".gif",
-};
+  uploadImages,
+  createSignedUrls,
+  deleteImages,
+} from "./imageServiceClient.js";
 
 const PUBLIC_URL_PREFIXES = [
   "http://",
@@ -134,119 +124,23 @@ const normalizeContent = (
   };
 };
 
-const getFileExtension = (file) => {
-  const originalExtension = path
-    .extname(
-      file.originalname ?? ""
-    )
-    .toLowerCase();
-
-  const allowedExtensions =
-    new Set([
-      ".jpg",
-      ".jpeg",
-      ".png",
-      ".webp",
-      ".gif",
-    ]);
-
-  if (
-    allowedExtensions.has(
-      originalExtension
-    )
-  ) {
-    return originalExtension ===
-      ".jpeg"
-      ? ".jpg"
-      : originalExtension;
-  }
-
-  return (
-    extensionByMimeType[
-      file.mimetype
-    ] ?? ""
-  );
-};
-
-const createPostImageKey = (
-  userId,
-  file
-) => {
-  const extension =
-    getFileExtension(file);
-
-  return [
-    "posts",
-    userId,
-    `${Date.now()}-${crypto.randomUUID()}${extension}`,
-  ].join("/");
-};
-
-const createStoryImageKey = (
-  userId,
-  file
-) => {
-  const extension = getFileExtension(file);
-
-  return [
-    "stories",
-    userId,
-    `${Date.now()}-${crypto.randomUUID()}${extension}`,
-  ].join("/");
-};
-
-const createProfileImageKey = (userId, imageType, file) => [
-  "profiles",
-  userId,
-  imageType,
-  `${Date.now()}-${crypto.randomUUID()}${getFileExtension(file)}`,
-].join("/");
-
-const createChatImageKey = (chatId, userId, file) => [
-  "chats",
-  chatId,
-  userId,
-  `${Date.now()}-${crypto.randomUUID()}${getFileExtension(file)}`,
-].join("/");
-
-const createCommentImageKey = (postId, userId, file) => [
-  "comments",
-  postId,
-  userId,
-  `${Date.now()}-${crypto.randomUUID()}${getFileExtension(file)}`,
-].join("/");
-
 export const uploadCommentImage = async (postId, userId, file) => {
   if (!Number.isInteger(Number(postId)) || !Number.isInteger(Number(userId)) || !file?.buffer) {
     throw new Error("Thông tin ảnh bình luận không hợp lệ");
   }
-  const key = createCommentImageKey(postId, userId, file);
-  await uploadObjectToStorage({
-    key,
-    body: file.buffer,
-    contentType: file.mimetype,
-    metadata: { postId: String(postId), userId: String(userId), type: "comment-image" },
-  });
-  return key;
+  return (await uploadImages({ files: [file], category: "comments", ownerId: userId, resourceId: postId }))[0];
 };
 
-export const deleteCommentImage = (key) => deleteObjectFromStorage(key);
+export const deleteCommentImage = (key) => deleteImages([key]);
 
 export const uploadChatImage = async (chatId, userId, file) => {
   if (!Number.isInteger(Number(chatId)) || !Number.isInteger(Number(userId)) || !file?.buffer) {
     throw new Error("Thông tin ảnh chat không hợp lệ");
   }
-  const key = createChatImageKey(chatId, userId, file);
-  await uploadObjectToStorage({
-    key,
-    body: file.buffer,
-    contentType: file.mimetype,
-    metadata: { chatId: String(chatId), userId: String(userId), type: "chat-image" },
-  });
-  return key;
+  return (await uploadImages({ files: [file], category: "chats", ownerId: userId, resourceId: chatId }))[0];
 };
 
-export const deleteChatImage = (key) => deleteObjectFromStorage(key);
+export const deleteChatImage = (key) => deleteImages([key]);
 
 export const uploadProfileImage = async (userId, imageType, file) => {
   if (!Number.isInteger(Number(userId)) || !["avatar", "background"].includes(imageType)) {
@@ -254,19 +148,14 @@ export const uploadProfileImage = async (userId, imageType, file) => {
   }
   if (!file?.buffer) throw new Error("Không có dữ liệu ảnh profile");
 
-  const key = createProfileImageKey(userId, imageType, file);
-  await uploadObjectToStorage({
-    key,
-    body: file.buffer,
-    contentType: file.mimetype,
-    metadata: { userId: String(userId), type: imageType },
-  });
-  return key;
+  return (await uploadImages({ files: [file], category: "profiles", ownerId: userId, imageType }))[0];
 };
 
 export const resolveStoredImageUrl = async (value) => {
   if (!value || typeof value !== "string") return value ?? null;
-  return isStorageObjectKey(value) ? createSignedObjectUrl(value, 7 * 24 * 60 * 60) : value;
+  if (!isStorageObjectKey(value)) return value;
+  const urls = await createSignedUrls([value], 7 * 24 * 60 * 60);
+  return urls[value] ?? value;
 };
 
 export const attachProfileImageUrls = async (record) => {
@@ -294,19 +183,7 @@ export const uploadStoryImage = async (
     throw new Error("Không có dữ liệu ảnh story.");
   }
 
-  const key = createStoryImageKey(userId, file);
-
-  await uploadObjectToStorage({
-    key,
-    body: file.buffer,
-    contentType: file.mimetype,
-    metadata: {
-      userId: String(userId),
-      type: "story",
-    },
-  });
-
-  return key;
+  return (await uploadImages({ files: [file], category: "stories", ownerId: userId }))[0];
 };
 
 export const uploadPostImages =
@@ -329,50 +206,7 @@ export const uploadPostImages =
       return [];
     }
 
-    const uploadedKeys = [];
-
-    try {
-      for (const file of files) {
-        if (!file?.buffer) {
-          throw new Error(
-            `Không có buffer của file ${
-              file?.originalname ?? ""
-            }.`
-          );
-        }
-
-        const key =
-          createPostImageKey(
-            userId,
-            file
-          );
-
-        await uploadObjectToStorage({
-          key,
-          body: file.buffer,
-          contentType:
-            file.mimetype,
-          metadata: {
-            userId:
-              String(userId),
-          },
-        });
-
-        uploadedKeys.push(key);
-      }
-
-      return uploadedKeys;
-    } catch (error) {
-      await Promise.allSettled(
-        uploadedKeys.map((key) =>
-          deleteObjectFromStorage(
-            key
-          )
-        )
-      );
-
-      throw error;
-    }
+    return uploadImages({ files, category: "posts", ownerId: userId });
   };
 
 export const getPostImageSignedUrls =
@@ -381,46 +215,14 @@ export const getPostImageSignedUrls =
       return [];
     }
 
-    return Promise.all(
-      images.map(async (image) => {
-        const normalizedImage =
-          typeof image === "string"
-            ? image.trim()
-            : "";
-
-        if (!normalizedImage) {
-          return null;
-        }
-
-        /*
-         * Ảnh cũ đã là URL thì trả nguyên trạng.
-         */
-        if (
-          isPublicUrl(
-            normalizedImage
-          )
-        ) {
-          return normalizedImage;
-        }
-
-        /*
-         * Chỉ object key mới cần signed URL.
-         */
-        if (
-          isStorageObjectKey(
-            normalizedImage
-          )
-        ) {
-          return createSignedObjectUrl(
-            normalizedImage
-          );
-        }
-
-        return null;
-      })
-    ).then((results) =>
-      results.filter(Boolean)
-    );
+    const normalized = images
+      .map((image) => typeof image === "string" ? image.trim() : "")
+      .filter(Boolean);
+    const storageKeys = normalized.filter(isStorageObjectKey);
+    const signedUrls = storageKeys.length ? await createSignedUrls(storageKeys) : {};
+    return normalized
+      .map((image) => isPublicUrl(image) ? image : signedUrls[image] ?? null)
+      .filter(Boolean);
   };
 
 export const attachSignedUrlsToPost =
@@ -526,11 +328,5 @@ export const deletePostImages =
         isStorageObjectKey
       );
 
-    await Promise.allSettled(
-      storageKeys.map((key) =>
-        deleteObjectFromStorage(
-          key
-        )
-      )
-    );
+    await deleteImages(storageKeys);
   };

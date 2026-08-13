@@ -1,9 +1,5 @@
 import * as storyDAL from '../DAL/storyDAL.js';
 import * as storageService from './storageService.js';
-import {
-    createSignedObjectUrl,
-    deleteObjectFromStorage,
-} from '../configs/s3Config.js';
 
 const isStorageKey = (value) =>
     typeof value === 'string' &&
@@ -17,9 +13,7 @@ const attachSignedUrl = async (story) => {
     }
 
     const imageKey = story.image_key ?? story.image_url;
-    const imageUrl = isStorageKey(imageKey)
-        ? await createSignedObjectUrl(imageKey)
-        : imageKey;
+    const imageUrl = await storageService.resolveStoredImageUrl(imageKey);
     const avatarUrl = await storageService.resolveStoredImageUrl(story.avatar);
 
     return {
@@ -32,11 +26,8 @@ const attachSignedUrl = async (story) => {
 };
 
 const deleteStoryImages = async (stories) => {
-    await Promise.allSettled(
-        stories
-            .map((story) => story?.image_key ?? story?.image_url)
-            .filter(isStorageKey)
-            .map((imageKey) => deleteObjectFromStorage(imageKey))
+    await storageService.deletePostImages(
+        stories.map((story) => story?.image_key ?? story?.image_url).filter(isStorageKey)
     );
 };
 
@@ -59,7 +50,7 @@ export const createStory = async (userId, file) => {
         const rows = await storyDAL.createStory(userId, imageKey);
         return attachSignedUrl(rows[0] ?? null);
     } catch (error) {
-        await deleteObjectFromStorage(imageKey).catch(() => undefined);
+        await storageService.deletePostImages([imageKey]).catch(() => undefined);
         throw error;
     }
 };

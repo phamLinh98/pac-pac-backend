@@ -1,6 +1,5 @@
 import * as userService from '../services/userService.js';
 import * as storageService from '../services/storageService.js';
-import { deleteObjectFromStorage } from '../configs/s3Config.js';
 export const getListFriendViaUserId = async (req, res) => {
     try {
         const userId = Number(req.params.id);
@@ -104,7 +103,7 @@ export const updateProfileImage = async (req, res) => {
 
         return res.status(200).json({ message: 'Cập nhật ảnh profile thành công', user });
     } catch (error) {
-        if (uploadedKey) await deleteObjectFromStorage(uploadedKey).catch(() => undefined);
+        if (uploadedKey) await storageService.deletePostImages([uploadedKey]).catch(() => undefined);
         console.error('updateProfileImage error:', error);
         return res.status(500).json({ message: 'Không thể cập nhật ảnh profile' });
     }
