@@ -1,55 +1,9 @@
-import { envConfig } from '../configs/envConfig.js';
 import * as userDAL from '../DAL/userDAL.js';
-import { signAccessToken, signRefeshToken } from '../utils/signTokenAuthorization.js';
-import { hashPassword, isPasswordHash, verifyPassword } from '../utils/password.js';
 import * as storageService from './storageService.js';
-
-export const getUser = async () => {
-    const rows = await userDAL.getUser();
-    return rows;
-}
 
 export const finUserViaUserId = async (userId) => {
     const rows = await userDAL.finUserViaUserId(userId);
     return Promise.all(rows.map(storageService.attachProfileImageUrls));
-}
-
-export const loginUserByEmailAndPassword = async (email, password) => {
-        const rows = await userDAL.findUserForLogin(email);
-        const databaseUser = rows[0];
-        if (!databaseUser || !(await verifyPassword(password, databaseUser.password))) {
-            return null;
-        }
-
-        if (!isPasswordHash(databaseUser.password)) {
-            await userDAL.updatePasswordHash(databaseUser.id, await hashPassword(password));
-        }
-
-        const { password: _password, ...userLogin } = databaseUser;
-        const accessToken = signAccessToken(userLogin, envConfig.accessSecretKey, { expiresIn: '1h' })
-        const refreshToken = signRefeshToken(userLogin, envConfig.refeshSecretKey, { expiresIn: '365d' })
-        const clientUser = await storageService.attachProfileImageUrls(userLogin);
-        const tokenForClient = signRefeshToken(
-            { ...clientUser, token_use: 'client-display' },
-            envConfig.refeshSecretKey,
-            { expiresIn: '365d', audience: 'pac-pac-frontend' }
-        );
-        await userDAL.saveRefeshToken(userLogin.id, refreshToken);
-        return {
-            userLogin,
-            accessToken,
-            refreshToken,
-            tokenForClient
-        }
-}
-
-export const isRefreshTokenActive = async (userId, token) => {
-    const rows = await userDAL.findValidRefreshToken(userId, token);
-    return Array.isArray(rows) && rows.length > 0;
-}
-
-export const revokeRefreshToken = async (token) => {
-    if (token) await userDAL.revokeRefreshToken(token);
 }
 
 export const getListFriendViaUserId = async (userId) => {
@@ -73,20 +27,6 @@ export const getUserFriendOfLoginUser = async (userId) => {
 export const searchUsers = async (keyword, loginUserId) => {
     const rows = await userDAL.searchUsers(keyword, loginUserId);
     return Promise.all(rows.map(storageService.attachProfileImageUrls));
-}
-
-export const createNewUser = async (name, email, password) => {
-    try {
-        // Tạo user trước
-        const passwordHash = await hashPassword(password);
-        const newUser = await userDAL.createNewUser(name, email, passwordHash);
-        //await userDAL.createUserList(userId);
-        return newUser;
-       
-    } catch (error) {
-        console.log('Lỗi khi tạo user:', error);
-        throw error;
-    }
 }
 
 export const getProfileMedia = async (userId) => {

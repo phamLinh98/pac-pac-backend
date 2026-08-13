@@ -1,64 +1,11 @@
 import sql from '../configs/db.js';
 import * as userModel from '../models/userModel.js';
-import crypto from 'crypto';
-
-const tokenDigest = (token) => crypto.createHash('sha256').update(token).digest('hex');
-
-export const getUser = async () => {
-    try {
-      const queryObject = userModel.getUser();
-      const rows = await sql(queryObject);
-  
-      if (rows && rows.length > 0) {
-        // Tạo một mảng mới chỉ chứa id, name, email và avatar
-        const users = rows.map(user => {
-          const { id, name, email, avatar } = user;
-          return { id, name, email, avatar };
-        });
-  
-        return users; // Trả về mảng các đối tượng người dùng
-      } else {
-        // Không tìm thấy người dùng nào
-        return []; // Trả về mảng rỗng
-      }
-    } catch (error) {
-      console.error("Lỗi khi lấy thông tin người dùng:", error);
-      return []; // Trả về mảng rỗng trong trường hợp lỗi
-    }
-  };
 
 export const finUserViaUserId = async(userId) => {
     const {query, values} = userModel.finUserViaUserId(userId);
     const rows = await sql(query, values);
     return rows;
 
-}
-
-export const findUserForLogin = async (email) => {
-    const { query, values } = userModel.findUserForLogin(email);
-    const rows = await sql(query, values);
-    return rows;
-}
-
-export const updatePasswordHash = async (userId, passwordHash) => {
-    const { query, values } = userModel.updatePasswordHash(userId, passwordHash);
-    return sql(query, values);
-}
-
-export const saveRefeshToken = async (userId, token) => {
-   const {query, values} = userModel.saveRefeshToken(userId, tokenDigest(token));
-   const rows = await sql(query, values);
-   return rows;
-}
-
-export const findValidRefreshToken = async (userId, token) => {
-    const { query, values } = userModel.findValidRefreshToken(userId, token, tokenDigest(token));
-    return sql(query, values);
-}
-
-export const revokeRefreshToken = async (token) => {
-    const { query, values } = userModel.revokeRefreshToken(token, tokenDigest(token));
-    return sql(query, values);
 }
 
 
@@ -77,18 +24,6 @@ export const getUserFriendOfLoginUser = async(userId) => {
 export const searchUsers = async (keyword, loginUserId) => {
     const { query, values } = userModel.searchUsers(keyword, loginUserId);
     return sql(query, values);
-}
-
-export const createNewUser = async(name, email, password) => {
-    const {query, values} = userModel.createNewUser(name, email, password);
-    const rows = await sql(query, values);
-    return rows;
-}
-
-export const createUserList = async(userId) => {
-    const {query, values} = userModel.createUserList(userId);
-    const rows = await sql(query, values);
-    return rows;
 }
 
 export const updateProfileImage = async(userId, imageType, imageKey) => {

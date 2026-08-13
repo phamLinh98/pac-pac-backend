@@ -5,7 +5,6 @@ import path from "path";
 
 import corsMiddleware from "./middlewares/cors.js";
 import router from "./routers/router.js";
-import { envConfig } from "./configs/envConfig.js";
 import { apiLimiter, securityHeaders, validateRequestOrigin } from "./middlewares/security.js";
 
 const app = express();
@@ -35,11 +34,8 @@ app.use(
   })
 );
 
-app.use(
-  cookieParser(
-    envConfig.accessSecretKey
-  )
-);
+// Authentication service phát cookie thường; backend chỉ cần parse accessToken.
+app.use(cookieParser());
 
 /*
  * Route API

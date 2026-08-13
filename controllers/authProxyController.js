@@ -1,0 +1,23 @@
+import { authServiceBaseUrl } from "../configs/authServiceConfig.js";
+
+const forward = (path) => async (req, res) => {
+  try {
+    const upstream = await fetch(`${authServiceBaseUrl}${path}`, {
+      method: "POST",
+      headers: { "content-type": "application/json", ...(req.headers.cookie ? { cookie: req.headers.cookie } : {}) },
+      body: JSON.stringify(req.body ?? {}),
+      signal: AbortSignal.timeout(10_000),
+    });
+    for (const cookie of upstream.headers.getSetCookie?.() ?? []) res.append("set-cookie", cookie);
+    const body = await upstream.text();
+    return res.status(upstream.status).type(upstream.headers.get("content-type") ?? "application/json").send(body);
+  } catch (error) {
+    console.error("Authentication service error:", error);
+    return res.status(503).json({ message: "Authentication service is unavailable" });
+  }
+};
+
+export const login = forward("/api/v1/auth/login");
+export const register = forward("/api/v1/auth/register");
+export const logout = forward("/api/v1/auth/logout");
+export const refresh = forward("/api/v1/auth/refresh");

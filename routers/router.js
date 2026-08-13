@@ -7,6 +7,7 @@ import * as notificationController from '../controllers/notificationController.j
 import * as chatController from '../controllers/chatController.js';
 import * as likeController from '../controllers/likeController.js';
 import * as shareController from '../controllers/shareController.js';
+import * as authProxyController from '../controllers/authProxyController.js';
 import { checkTokenMiddleware } from '../middlewares/checkTokenNotValid.js';
 import {
   uploadPostImagesMiddleware,
@@ -50,13 +51,13 @@ router.put(
   validateUploadedImages,
   userController.updateProfileImage
 );
-router.post('/login', loginLimiter, userController.loginUserByEmailAndPassword);
-router.post('/logout', userController.logoutAndRemoveAllToken);
-router.post('/refesh-token', userController.refreshTokenWhenExpired);
+router.post('/login', loginLimiter, authProxyController.login);
+router.post('/logout', authProxyController.logout);
+router.post('/refesh-token', authProxyController.refresh);
 router.get('/list-friend/:id', checkTokenMiddleware, userController.getListFriendViaUserId);
 router.post('/presence/heartbeat', checkTokenMiddleware, userController.heartbeat);
 router.get('/friends/presence', checkTokenMiddleware, userController.getFriendPresence);
-router.post('/register', registerLimiter, userController.createNewUser)
+router.post('/register', registerLimiter, authProxyController.register);
 router.put('/user/:id', checkTokenMiddleware, userController.updateAvatarOfUser);
 router.put('/update-add-friend/:id/:id2', checkTokenMiddleware, userController.updateAddFriend);
 router.post("/send-friend-request", checkTokenMiddleware, userController.sendFriendRequest);

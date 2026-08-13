@@ -1,8 +1,3 @@
-export const getUser = () => {
-  const query = `SELECT * FROM "public"."user"`;
-  return query;
-};
-
 export const finUserViaUserId = (userId) => {
   const query = `
       SELECT id, name, email, avatar, namecode, list_friend_id, background
@@ -13,53 +8,6 @@ export const finUserViaUserId = (userId) => {
   const values = [userId];
   return { query, values };
 };
-
-export const findUserForLogin = (email) => {
-  const query = `
-            SELECT id, name, email, password, avatar, namecode, list_friend_id, background
-            FROM "public"."user"
-            WHERE LOWER(email) = LOWER($1)
-            LIMIT 1`;
-  const values = [email];
-  return { query, values };
-};
-
-export const updatePasswordHash = (userId, passwordHash) => ({
-  query: `UPDATE "public"."user" SET password = $2, updated_at = NOW() WHERE id = $1`,
-  values: [userId, passwordHash],
-});
-
-export const saveRefeshToken = (userId, token) => {
-  const query = `
-      WITH DeleteExisting 
-      AS (
-          DELETE FROM "public"."refresh_tokens"
-          WHERE user_id = $1
-          RETURNING token_id
-        ),
-      InsertNew AS (
-      INSERT INTO "public"."refresh_tokens" (user_id,token, expiry_at, created_at)
-      VALUES ($1,$2, NOW() + INTERVAL '1 year', NOW())
-      RETURNING token_id, user_id, token, expiry_at, created_at)
-      SELECT * FROM InsertNew `;
-  const values = [userId, token];
-  return { query, values };
-};
-
-export const findValidRefreshToken = (userId, token, tokenDigest) => ({
-  query: `
-    SELECT token_id
-    FROM "public"."refresh_tokens"
-    WHERE user_id = $1 AND token IN ($2, $3) AND expiry_at > NOW()
-    LIMIT 1
-  `,
-  values: [userId, token, tokenDigest],
-});
-
-export const revokeRefreshToken = (token, tokenDigest) => ({
-  query: `DELETE FROM "public"."refresh_tokens" WHERE token IN ($1, $2)`,
-  values: [token, tokenDigest],
-});
 
 export const getListFriendViaUserId = (userId) => {
   const query = `
@@ -109,26 +57,6 @@ export const searchUsers = (keyword, loginUserId) => ({
   `,
   values: [keyword, loginUserId],
 });
-
-export const createNewUser = (name, email, password) => {
-  const query = `
-    WITH new_user AS (
-  INSERT INTO "public"."user" (name, email, password, avatar, created_at)
-  VALUES ($1, $2, $3, 'https://i.pinimg.com/1200x/2f15f2e8c688b3120d3d26467b06330c.jpg', NOW())
-  RETURNING id, name, email, avatar
-),
-insert_list AS (
-  INSERT INTO list (user_id)
-  SELECT id FROM new_user
-  RETURNING user_id
-)
-SELECT new_user.id AS user_id, new_user.name, new_user.email, new_user.avatar
-FROM new_user;
-
-  `;
-  const values = [name, email, password];
-  return { query, values };
-};
 
 export const updateProfileImage = (userId, imageType, imageKey) => ({
   query: `
