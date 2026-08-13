@@ -1,4 +1,4 @@
-import { authServiceBaseUrl } from "../configs/authServiceConfig.js";
+import { authServiceBaseUrl, authServiceTimeoutMs } from "../configs/authServiceConfig.js";
 
 const forward = (path) => async (req, res) => {
   try {
@@ -6,7 +6,7 @@ const forward = (path) => async (req, res) => {
       method: "POST",
       headers: { "content-type": "application/json", ...(req.headers.cookie ? { cookie: req.headers.cookie } : {}) },
       body: JSON.stringify(req.body ?? {}),
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(authServiceTimeoutMs),
     });
     for (const cookie of upstream.headers.getSetCookie?.() ?? []) res.append("set-cookie", cookie);
     const body = await upstream.text();
