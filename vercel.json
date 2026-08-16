@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "regions": ["cle1"],
   "rewrites": [
     {
       "source": "/(.*)",
