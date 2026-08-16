@@ -20,10 +20,10 @@ export const getList = (viewerUserId) => {
       ou.name AS original_author_name,
       oui.avatar AS original_author_avatar,
       CASE WHEN l.share_snapshot IS NOT NULL AND op.id IS NOT NULL THEN op.shared ELSE l.shared END AS shared,
-      (SELECT COUNT(*) FROM comment c WHERE c.list_id = l.id)::int AS comment,
-      (SELECT COUNT(*) FROM post_like pl WHERE pl.post_id = l.id)::int AS "like",
+      (SELECT COUNT(*) FROM comment c WHERE c.list_id = l.id AND c.delete_flg = 0)::int AS comment,
+      (SELECT COUNT(*) FROM post_like pl WHERE pl.post_id = l.id AND pl.delete_flg = 0)::int AS "like",
       CASE WHEN l.share_snapshot IS NOT NULL AND op.id IS NOT NULL THEN op.shared ELSE l.shared END AS shared,
-      EXISTS (SELECT 1 FROM post_like pl WHERE pl.post_id = l.id AND pl.user_id = $1) AS likestatus,
+      EXISTS (SELECT 1 FROM post_like pl WHERE pl.post_id = l.id AND pl.user_id = $1 AND pl.delete_flg = 0) AS likestatus,
       l.created_at,
       u.name AS user_name,
       ui.avatar AS avatar,
@@ -31,10 +31,11 @@ export const getList = (viewerUserId) => {
     FROM list l
     JOIN public."user" u
       ON l.user_id = u.id
-    LEFT JOIN public.user_image ui ON ui.user_id = u.id
-    LEFT JOIN list op ON op.id = l.original_post_id
-    LEFT JOIN public."user" ou ON ou.id = op.user_id
-    LEFT JOIN public.user_image oui ON oui.user_id = ou.id
+    LEFT JOIN public.user_image ui ON ui.user_id = u.id AND ui.delete_flg = 0
+    LEFT JOIN list op ON op.id = l.original_post_id AND op.delete_flg = 0
+    LEFT JOIN public."user" ou ON ou.id = op.user_id AND ou.delete_flg = 0
+    LEFT JOIN public.user_image oui ON oui.user_id = ou.id AND oui.delete_flg = 0
+    WHERE l.delete_flg = 0 AND u.delete_flg = 0
     ORDER BY l.created_at DESC;
   `;
   return { query, values: [viewerUserId] };
@@ -57,9 +58,9 @@ export const getListStatusOfOneUser = (
       ou.id AS original_author_id,
       ou.name AS original_author_name,
       oui.avatar AS original_author_avatar,
-      (SELECT COUNT(*) FROM comment c WHERE c.list_id = l.id)::int AS comment,
-      (SELECT COUNT(*) FROM post_like pl WHERE pl.post_id = l.id)::int AS "like",
-      EXISTS (SELECT 1 FROM post_like pl WHERE pl.post_id = l.id AND pl.user_id = $2) AS likestatus,
+      (SELECT COUNT(*) FROM comment c WHERE c.list_id = l.id AND c.delete_flg = 0)::int AS comment,
+      (SELECT COUNT(*) FROM post_like pl WHERE pl.post_id = l.id AND pl.delete_flg = 0)::int AS "like",
+      EXISTS (SELECT 1 FROM post_like pl WHERE pl.post_id = l.id AND pl.user_id = $2 AND pl.delete_flg = 0) AS likestatus,
       u.namecode,
       u.name,
       ui.avatar,
@@ -71,12 +72,12 @@ export const getListStatusOfOneUser = (
     FROM list l
     JOIN public."user" u
       ON l.user_id = u.id
-    LEFT JOIN public.user_image ui ON ui.user_id = u.id
-    LEFT JOIN public.user_info info ON info.user_id = u.id
-    LEFT JOIN list op ON op.id = l.original_post_id
-    LEFT JOIN public."user" ou ON ou.id = op.user_id
-    LEFT JOIN public.user_image oui ON oui.user_id = ou.id
-    WHERE l.user_id = $1
+    LEFT JOIN public.user_image ui ON ui.user_id = u.id AND ui.delete_flg = 0
+    LEFT JOIN public.user_info info ON info.user_id = u.id AND info.delete_flg = 0
+    LEFT JOIN list op ON op.id = l.original_post_id AND op.delete_flg = 0
+    LEFT JOIN public."user" ou ON ou.id = op.user_id AND ou.delete_flg = 0
+    LEFT JOIN public.user_image oui ON oui.user_id = ou.id AND oui.delete_flg = 0
+    WHERE l.user_id = $1 AND l.delete_flg = 0 AND u.delete_flg = 0
     ORDER BY l.created_at DESC;
   `;
 
@@ -104,9 +105,9 @@ export const getListStatusOfOneUser = (
        ou.name AS original_author_name,
        oui.avatar AS original_author_avatar,
        CASE WHEN l.share_snapshot IS NOT NULL AND op.id IS NOT NULL THEN op.shared ELSE l.shared END AS shared,
-       (SELECT COUNT(*) FROM comment c WHERE c.list_id = l.id)::int AS comment,
-       (SELECT COUNT(*) FROM post_like pl WHERE pl.post_id = l.id)::int AS "like",
-       EXISTS (SELECT 1 FROM post_like pl WHERE pl.post_id = l.id AND pl.user_id = $1) AS likestatus,
+       (SELECT COUNT(*) FROM comment c WHERE c.list_id = l.id AND c.delete_flg = 0)::int AS comment,
+       (SELECT COUNT(*) FROM post_like pl WHERE pl.post_id = l.id AND pl.delete_flg = 0)::int AS "like",
+       EXISTS (SELECT 1 FROM post_like pl WHERE pl.post_id = l.id AND pl.user_id = $1 AND pl.delete_flg = 0) AS likestatus,
        friend_user.namecode,
        friend_user.name,
        friend_image.avatar,
@@ -122,11 +123,11 @@ export const getListStatusOfOneUser = (
        )
      JOIN public."user" AS friend_user
        ON friend_user.id = l.user_id
-     LEFT JOIN public.user_image friend_image ON friend_image.user_id = friend_user.id
-     LEFT JOIN list op ON op.id = l.original_post_id
-     LEFT JOIN public."user" ou ON ou.id = op.user_id
-     LEFT JOIN public.user_image oui ON oui.user_id = ou.id
-     WHERE cu.id = $1
+     LEFT JOIN public.user_image friend_image ON friend_image.user_id = friend_user.id AND friend_image.delete_flg = 0
+     LEFT JOIN list op ON op.id = l.original_post_id AND op.delete_flg = 0
+     LEFT JOIN public."user" ou ON ou.id = op.user_id AND ou.delete_flg = 0
+     LEFT JOIN public.user_image oui ON oui.user_id = ou.id AND oui.delete_flg = 0
+     WHERE cu.id = $1 AND cu.delete_flg = 0 AND l.delete_flg = 0 AND friend_user.delete_flg = 0
      ORDER BY l.created_at DESC;
    `;
 
@@ -151,8 +152,8 @@ export const getListReturnWhenUserIdNotExistInBoth =
         list_friend_id,
         '{}'::jsonb AS content
       FROM public."user" u
-      LEFT JOIN public.user_image ui ON ui.user_id = u.id
-      WHERE u.id = $1;
+      LEFT JOIN public.user_image ui ON ui.user_id = u.id AND ui.delete_flg = 0
+      WHERE u.id = $1 AND u.delete_flg = 0;
     `;
 
     const values = [userId];
@@ -184,9 +185,9 @@ export const getListUserIdWithEmptyContent = (userId) => {
       info.bios,
       u.list_friend_id
     FROM public."user" u
-    LEFT JOIN public.user_image ui ON ui.user_id = u.id
-    LEFT JOIN public.user_info info ON info.user_id = u.id
-    WHERE u.id = $1;
+    LEFT JOIN public.user_image ui ON ui.user_id = u.id AND ui.delete_flg = 0
+    LEFT JOIN public.user_info info ON info.user_id = u.id AND info.delete_flg = 0
+    WHERE u.id = $1 AND u.delete_flg = 0;
   `;
 
   const values = [userId];
@@ -213,24 +214,24 @@ export const checkUserIdExistInListAndUser = (
         WHEN EXISTS (
           SELECT 1
           FROM list
-          WHERE user_id = $1
+          WHERE user_id = $1 AND delete_flg = 0
         )
         AND EXISTS (
           SELECT 1
           FROM public."user"
-          WHERE id = $1
+          WHERE id = $1 AND delete_flg = 0
         )
         THEN 1
 
         WHEN NOT EXISTS (
           SELECT 1
           FROM list
-          WHERE user_id = $1
+          WHERE user_id = $1 AND delete_flg = 0
         )
         AND EXISTS (
           SELECT 1
           FROM public."user"
-          WHERE id = $1
+          WHERE id = $1 AND delete_flg = 0
         )
         THEN 2
 
@@ -288,7 +289,7 @@ export const createNewPost = (
 };
 
 export const getPostByIdAndUser = (postId, userId) => ({
-  query: `SELECT id, user_id, content FROM list WHERE id = $1 AND user_id = $2 LIMIT 1`,
+  query: `SELECT id, user_id, content FROM list WHERE id = $1 AND user_id = $2 AND delete_flg = 0 LIMIT 1`,
   values: [postId, userId],
 });
 
@@ -306,7 +307,7 @@ export const updatePost = (
   const query = `
     UPDATE list
     SET content = $1::jsonb
-    WHERE id = $2 AND user_id = $3
+    WHERE id = $2 AND user_id = $3 AND delete_flg = 0
     RETURNING *;
   `;
 
@@ -335,14 +336,15 @@ export const deletePost = (
 ) => {
   const query = `
     WITH target AS (
-      SELECT * FROM list WHERE id = $1 AND user_id = $2
+      SELECT * FROM list WHERE id = $1 AND user_id = $2 AND delete_flg = 0
     ), updated_original AS (
       UPDATE list
       SET shared = GREATEST(0, shared - 1)
       WHERE id IN (SELECT original_post_id FROM target WHERE original_post_id IS NOT NULL)
     )
-    DELETE FROM list
-    WHERE id = $1 AND user_id = $2
+    UPDATE list
+    SET delete_flg = 1, updated_at = NOW()
+    WHERE id = $1 AND user_id = $2 AND delete_flg = 0
     RETURNING *;
   `;
 

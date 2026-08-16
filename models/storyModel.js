@@ -13,8 +13,8 @@ export const getStory = () => {
     FROM story
     JOIN "public"."user" AS user_account
       ON story.user_id = user_account.id
-    LEFT JOIN "public"."user_image" AS user_image ON user_image.user_id = user_account.id
-    WHERE COALESCE(
+    LEFT JOIN "public"."user_image" AS user_image ON user_image.user_id = user_account.id AND user_image.delete_flg = 0
+    WHERE story.delete_flg = 0 AND user_account.delete_flg = 0 AND COALESCE(
       story.expires_at,
       story.created_at + INTERVAL '24 hours'
     ) > NOW()
@@ -37,8 +37,8 @@ export const createStory = (userId, imageKey) => ({
         NOW() + INTERVAL '24 hours',
         user_image.avatar
       FROM "public"."user" AS user_account
-      LEFT JOIN "public"."user_image" AS user_image ON user_image.user_id = user_account.id
-      WHERE user_account.id = $1
+      LEFT JOIN "public"."user_image" AS user_image ON user_image.user_id = user_account.id AND user_image.delete_flg = 0
+      WHERE user_account.id = $1 AND user_account.delete_flg = 0
       RETURNING *
     )
     SELECT
@@ -54,23 +54,25 @@ export const createStory = (userId, imageKey) => ({
     FROM inserted_story
     JOIN "public"."user" AS user_account
       ON inserted_story.user_id = user_account.id
-    LEFT JOIN "public"."user_image" AS user_image ON user_image.user_id = user_account.id;
+    LEFT JOIN "public"."user_image" AS user_image ON user_image.user_id = user_account.id AND user_image.delete_flg = 0;
   `,
   values: [userId, imageKey],
 });
 
 export const deleteStory = (storyId, userId) => ({
   query: `
-    DELETE FROM story
-    WHERE id = $1 AND user_id = $2
+    UPDATE story
+    SET delete_flg = 1
+    WHERE id = $1 AND user_id = $2 AND delete_flg = 0
     RETURNING *, image_url AS image_key;
   `,
   values: [storyId, userId],
 });
 
 export const deleteExpiredStories = () => `
-  DELETE FROM story
-  WHERE COALESCE(
+  UPDATE story
+  SET delete_flg = 1
+  WHERE delete_flg = 0 AND COALESCE(
     expires_at,
     created_at + INTERVAL '24 hours'
   ) <= NOW()

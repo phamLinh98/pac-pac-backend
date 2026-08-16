@@ -1,20 +1,20 @@
 export const togglePostLike = (postId, userId) => ({
   query: `
     WITH deleted AS (
-      DELETE FROM post_like
-      WHERE post_id = $1 AND user_id = $2
+      UPDATE post_like SET delete_flg = 1
+      WHERE post_id = $1 AND user_id = $2 AND delete_flg = 0
       RETURNING id
     ), inserted AS (
       INSERT INTO post_like (post_id, user_id)
       SELECT $1, $2
       WHERE NOT EXISTS (SELECT 1 FROM deleted)
-        AND EXISTS (SELECT 1 FROM list WHERE id = $1)
-      ON CONFLICT (post_id, user_id) DO NOTHING
+        AND EXISTS (SELECT 1 FROM list WHERE id = $1 AND delete_flg = 0)
+      ON CONFLICT (post_id, user_id) DO UPDATE SET delete_flg = 0
       RETURNING id
     ), removed_notification AS (
-      DELETE FROM notification_message
+      UPDATE notification_message SET delete_flg = 1
       WHERE post_id = $1 AND sender_user_id = $2 AND notification_type = 'LIKE'
-        AND EXISTS (SELECT 1 FROM deleted)
+        AND delete_flg = 0 AND EXISTS (SELECT 1 FROM deleted)
       RETURNING id
     ), new_notification AS (
       INSERT INTO notification_message (
@@ -22,17 +22,16 @@ export const togglePostLike = (postId, userId) => ({
       )
       SELECT l.user_id, $2, l.id, 'LIKE'
       FROM list l
-      WHERE l.id = $1 AND l.user_id <> $2 AND EXISTS (SELECT 1 FROM inserted)
+      WHERE l.id = $1 AND l.user_id <> $2 AND l.delete_flg = 0
+        AND EXISTS (SELECT 1 FROM inserted)
       RETURNING id
     ), updated_post AS (
       UPDATE list
       SET "like" = GREATEST(
         0,
-        (SELECT COUNT(*) FROM post_like WHERE post_id = $1)
-          + (SELECT COUNT(*) FROM inserted)
-          - (SELECT COUNT(*) FROM deleted)
+        (SELECT COUNT(*) FROM post_like WHERE post_id = $1 AND delete_flg = 0)
       )
-      WHERE id = $1
+      WHERE id = $1 AND delete_flg = 0
       RETURNING id, "like"
     )
     SELECT

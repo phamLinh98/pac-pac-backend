@@ -3,9 +3,9 @@ export const finUserViaUserId = (userId) => {
       SELECT u.id, u.name, u.email, ui.avatar, u.namecode, u.list_friend_id, ui.background,
              info.address, info.education, info.bios
       FROM "public"."user" u
-      LEFT JOIN "public"."user_image" ui ON ui.user_id = u.id
-      LEFT JOIN "public"."user_info" info ON info.user_id = u.id
-      WHERE u.id = $1
+      LEFT JOIN "public"."user_image" ui ON ui.user_id = u.id AND ui.delete_flg = 0
+      LEFT JOIN "public"."user_info" info ON info.user_id = u.id AND info.delete_flg = 0
+      WHERE u.id = $1 AND u.delete_flg = 0
       LIMIT 1
   `;
   const values = [userId];
@@ -26,8 +26,8 @@ export const getListFriendViaUserId = (userId) => {
     ) AS friend_id(id)
     JOIN "public"."user" AS friend_account
       ON friend_account.id = friend_id.id
-    LEFT JOIN "public"."user_image" AS friend_image ON friend_image.user_id = friend_account.id
-    WHERE profile_user.id = $1
+    LEFT JOIN "public"."user_image" AS friend_image ON friend_image.user_id = friend_account.id AND friend_image.delete_flg = 0
+    WHERE profile_user.id = $1 AND profile_user.delete_flg = 0 AND friend_account.delete_flg = 0
     ORDER BY friend_account.name ASC;
   `;
   const values = [userId];
@@ -37,8 +37,8 @@ export const getListFriendViaUserId = (userId) => {
 export const getUserFriendOfLoginUser = (userId) => {
   const query = `SELECT u.id, u.name, ui.avatar, u.list_friend_id
                  FROM "public"."user" u
-                 LEFT JOIN "public"."user_image" ui ON ui.user_id = u.id
-                 WHERE u.id != $1 `;
+                 LEFT JOIN "public"."user_image" ui ON ui.user_id = u.id AND ui.delete_flg = 0
+                 WHERE u.id != $1 AND u.delete_flg = 0 `;
   const values = [userId];
   return { query, values };
 };
@@ -47,8 +47,8 @@ export const searchUsers = (keyword, loginUserId) => ({
   query: `
     SELECT u.id, u.name, ui.avatar, u.namecode
     FROM "public"."user" u
-    LEFT JOIN "public"."user_image" ui ON ui.user_id = u.id
-    WHERE u.id <> $2
+    LEFT JOIN "public"."user_image" ui ON ui.user_id = u.id AND ui.delete_flg = 0
+    WHERE u.id <> $2 AND u.delete_flg = 0
       AND (
         u.name ILIKE '%' || $1 || '%'
         OR COALESCE(u.namecode, '') ILIKE '%' || $1 || '%'
@@ -69,7 +69,8 @@ export const updateProfileImage = (userId, imageType, imageKey) => ({
     INSERT INTO "public"."user_image" (user_id, ${imageType === "avatar" ? "avatar" : "background"})
     VALUES ($1, $2)
     ON CONFLICT (user_id) DO UPDATE
-    SET ${imageType === "avatar" ? "avatar" : "background"} = EXCLUDED.${imageType === "avatar" ? "avatar" : "background"}, updated_at = NOW()
+    SET ${imageType === "avatar" ? "avatar" : "background"} = EXCLUDED.${imageType === "avatar" ? "avatar" : "background"},
+        updated_at = NOW(), delete_flg = 0
     RETURNING user_id AS id, avatar, background
   `,
   values: [userId, imageKey],
@@ -83,7 +84,8 @@ export const updateProfileInfo = (userId, { address, education, bios }) => ({
       address = EXCLUDED.address,
       education = EXCLUDED.education,
       bios = EXCLUDED.bios,
-      updated_at = NOW()
+      updated_at = NOW(),
+      delete_flg = 0
     RETURNING user_id, address, education, bios, updated_at
   `,
   values: [userId, address, education, bios],
@@ -100,12 +102,12 @@ export const getProfileMedia = (userId) => ({
         END
       ) AS image_key
       FROM list
-      WHERE user_id = $1
+      WHERE user_id = $1 AND delete_flg = 0
       UNION ALL
-      SELECT image_url AS image_key FROM story WHERE user_id = $1
+      SELECT image_url AS image_key FROM story WHERE user_id = $1 AND delete_flg = 0
       UNION ALL
       SELECT unnest(ARRAY[avatar, background]) AS image_key
-      FROM "public"."user_image" WHERE user_id = $1
+      FROM "public"."user_image" WHERE user_id = $1 AND delete_flg = 0
     ) AS media
     WHERE media.image_key IS NOT NULL AND media.image_key <> ''
     ORDER BY media.image_key
@@ -117,14 +119,14 @@ export const userOwnsMediaKey = (userId, imageKey) => ({
   query: `
     SELECT EXISTS (
       SELECT 1 FROM list
-      WHERE user_id = $1
+      WHERE user_id = $1 AND delete_flg = 0
         AND jsonb_typeof(content::jsonb->'image') = 'array'
         AND (content::jsonb->'image') ? $2
       UNION ALL
-      SELECT 1 FROM story WHERE user_id = $1 AND image_url = $2
+      SELECT 1 FROM story WHERE user_id = $1 AND image_url = $2 AND delete_flg = 0
       UNION ALL
       SELECT 1 FROM "public"."user_image"
-      WHERE user_id = $1 AND (avatar = $2 OR background = $2)
+      WHERE user_id = $1 AND (avatar = $2 OR background = $2) AND delete_flg = 0
     ) AS owns_media
   `,
   values: [userId, imageKey],
@@ -143,10 +145,11 @@ export const getListSendFriend = (userId) => {
       ON sender.id = friend_request.sender_id
     JOIN "public"."user" AS receiver
       ON receiver.id = friend_request.receiver_id
-    LEFT JOIN "public"."user_image" sender_image ON sender_image.user_id = sender.id
-    LEFT JOIN "public"."user_image" receiver_image ON receiver_image.user_id = receiver.id
-    WHERE friend_request.sender_id = $1::BIGINT
-       OR friend_request.receiver_id = $1::BIGINT
+    LEFT JOIN "public"."user_image" sender_image ON sender_image.user_id = sender.id AND sender_image.delete_flg = 0
+    LEFT JOIN "public"."user_image" receiver_image ON receiver_image.user_id = receiver.id AND receiver_image.delete_flg = 0
+    WHERE friend_request.delete_flg = 0 AND sender.delete_flg = 0 AND receiver.delete_flg = 0
+      AND (friend_request.sender_id = $1::BIGINT
+       OR friend_request.receiver_id = $1::BIGINT)
     ORDER BY friend_request.updated_at DESC`;
   const values = [userId];
   return { query, values };
@@ -154,21 +157,34 @@ export const getListSendFriend = (userId) => {
 
 export const updateAddFriend = (userId, userId2) => {
   const query = `
-BEGIN;
-
-UPDATE users
-SET list_friend_id = array_append(list_friend_id, $1)
-WHERE id = $2;
-
-UPDATE users
-SET list_friend_id = array_append(list_friend_id, $2)
-WHERE id = $1;
-
-DELETE FROM friendship_send
-WHERE user_second_id = $2 AND user_first_id = $1;
-
-COMMIT;
-
+    WITH accepted_request AS (
+      UPDATE public.friend_requests
+      SET status = 'accepted', updated_at = NOW(), delete_flg = 0
+      WHERE user_low_id = LEAST($1::BIGINT, $2::BIGINT)
+        AND user_high_id = GREATEST($1::BIGINT, $2::BIGINT)
+        AND delete_flg = 0
+      RETURNING id
+    ), first_user AS (
+      UPDATE public."user"
+      SET list_friend_id = ARRAY(
+        SELECT DISTINCT value
+        FROM unnest(COALESCE(list_friend_id, ARRAY[]::BIGINT[]) || $2::BIGINT) value
+      ), updated_at = NOW()
+      WHERE id = $1 AND delete_flg = 0
+      RETURNING id
+    ), second_user AS (
+      UPDATE public."user"
+      SET list_friend_id = ARRAY(
+        SELECT DISTINCT value
+        FROM unnest(COALESCE(list_friend_id, ARRAY[]::BIGINT[]) || $1::BIGINT) value
+      ), updated_at = NOW()
+      WHERE id = $2 AND delete_flg = 0
+      RETURNING id
+    )
+    SELECT
+      EXISTS (SELECT 1 FROM first_user) AS first_user_updated,
+      EXISTS (SELECT 1 FROM second_user) AS second_user_updated,
+      EXISTS (SELECT 1 FROM accepted_request) AS request_updated;
   `;
   const values = [userId, userId2];
   return { query, values };
@@ -185,6 +201,7 @@ export const updateListFriend = (userId, userId2) => {
         ),
         updated_at = NOW()
       WHERE id = $1
+        AND delete_flg = 0
         AND NOT (
           $2::BIGINT = ANY(
             COALESCE(list_friend_id, ARRAY[]::BIGINT[])
@@ -201,6 +218,7 @@ export const updateListFriend = (userId, userId2) => {
         ),
         updated_at = NOW()
       WHERE id = $2
+        AND delete_flg = 0
         AND NOT (
           $1::BIGINT = ANY(
             COALESCE(list_friend_id, ARRAY[]::BIGINT[])
@@ -260,7 +278,8 @@ export const sendFriendRequest = (senderId, receiverId) => {
         THEN 'accepted'
         ELSE "friend_requests".status
       END,
-      updated_at = NOW()
+      updated_at = NOW(),
+      delete_flg = 0
     RETURNING
       id,
       user_low_id,
@@ -284,7 +303,7 @@ export const cancelFriendship = (userId, friendId) => ({
       SET status = 'cancelled', updated_at = NOW()
       WHERE user_low_id = LEAST($1::BIGINT, $2::BIGINT)
         AND user_high_id = GREATEST($1::BIGINT, $2::BIGINT)
-        AND status = 'accepted'
+        AND status = 'accepted' AND delete_flg = 0
       RETURNING id, status
     ),
     update_current_user AS (
@@ -295,7 +314,7 @@ export const cancelFriendship = (userId, friendId) => ({
           $2::BIGINT
         ),
         updated_at = NOW()
-      WHERE id = $1
+      WHERE id = $1 AND delete_flg = 0
         AND EXISTS (SELECT 1 FROM updated_request)
       RETURNING id
     ),
@@ -307,7 +326,7 @@ export const cancelFriendship = (userId, friendId) => ({
           $1::BIGINT
         ),
         updated_at = NOW()
-      WHERE id = $2
+      WHERE id = $2 AND delete_flg = 0
         AND EXISTS (SELECT 1 FROM updated_request)
       RETURNING id
     )
@@ -329,7 +348,7 @@ export const cancelFriendRequest = (senderId, receiverId) => ({
       AND user_high_id = GREATEST($1::BIGINT, $2::BIGINT)
       AND sender_id = $1
       AND receiver_id = $2
-      AND status = 'pending'
+      AND status = 'pending' AND delete_flg = 0
     RETURNING
       id,
       sender_id,
@@ -342,7 +361,7 @@ export const cancelFriendRequest = (senderId, receiverId) => ({
 
 export const updateLastActive = (userId) => ({
   query: `
-    UPDATE public."user" SET last_active_at = NOW() WHERE id = $1
+    UPDATE public."user" SET last_active_at = NOW() WHERE id = $1 AND delete_flg = 0
     RETURNING last_active_at
   `,
   values: [userId],
@@ -359,8 +378,8 @@ export const getFriendPresence = (userId) => ({
     FROM public."user" owner
     CROSS JOIN LATERAL UNNEST(COALESCE(owner.list_friend_id, ARRAY[]::BIGINT[])) friend_id(id)
     JOIN public."user" friend ON friend.id = friend_id.id
-    LEFT JOIN public.user_image friend_image ON friend_image.user_id = friend.id
-    WHERE owner.id = $1
+    LEFT JOIN public.user_image friend_image ON friend_image.user_id = friend.id AND friend_image.delete_flg = 0
+    WHERE owner.id = $1 AND owner.delete_flg = 0 AND friend.delete_flg = 0
     ORDER BY is_online DESC, friend.name ASC
   `,
   values: [userId],
