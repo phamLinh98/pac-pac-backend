@@ -39,12 +39,26 @@ export const getListStatusOfOneUser = async (req, res) => {
       return res.status(403).json({ error: "Không có quyền xem bảng tin của user khác" });
     }
 
-    const result =
-      await listService.getListStatusOfOneUser(userId);
-
-    if (!Array.isArray(result) || result.length === 0) {
-      return res.status(200).json([]);
+    const requestedLimit = Number(req.query.limit ?? 10);
+    const limit = Number.isInteger(requestedLimit)
+      ? Math.min(Math.max(requestedLimit, 1), 50)
+      : 10;
+    let cursor = null;
+    if (req.query.cursor) {
+      try {
+        const decoded = JSON.parse(Buffer.from(String(req.query.cursor), "base64url").toString("utf8"));
+        const cursorId = Number(decoded.id);
+        const cursorDate = new Date(decoded.createdAt);
+        if (!Number.isInteger(cursorId) || cursorId <= 0 || Number.isNaN(cursorDate.getTime())) {
+          throw new Error("Invalid cursor values");
+        }
+        cursor = { id: cursorId, createdAt: cursorDate.toISOString() };
+      } catch {
+        return res.status(400).json({ error: "Invalid cursor" });
+      }
     }
+
+    const result = await listService.getListStatusOfOneUser(userId, { cursor, limit });
 
     return res.status(200).json(result);
   } catch (error) {

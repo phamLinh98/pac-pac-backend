@@ -83,7 +83,9 @@ export const getList = async (viewerUserId) => {
  * → trả [].
  */
 export const getListStatusOfOneUser = async (
-  userId
+  userId,
+  cursor,
+  limit
 ) => {
   validateUserId(
     userId,
@@ -115,7 +117,9 @@ export const getListStatusOfOneUser = async (
         values,
       } =
         listModel.getListStatusAllUserViaId(
-          userId
+          userId,
+          cursor,
+          limit
         );
 
       const rows = await sql(query, values);

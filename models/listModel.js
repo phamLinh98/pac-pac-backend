@@ -93,7 +93,7 @@ export const getListStatusOfOneUser = (
  * Lấy bài viết của những user nằm trong list_friend_id
  * của user đang đăng nhập.
  */
- export const getListStatusAllUserViaId = (userId) => {
+ export const getListStatusAllUserViaId = (userId, cursor, limit) => {
    const query = `
      SELECT
        l.*,
@@ -115,11 +115,9 @@ export const getListStatusOfOneUser = (
        friend_user.list_friend_id
      FROM public."user" AS cu
      JOIN list AS l
-       ON l.user_id = ANY(
-         COALESCE(
-           cu.list_friend_id,
-           ARRAY[]::bigint[]
-         )
+       ON (
+         l.user_id = cu.id
+         OR l.user_id = ANY(COALESCE(cu.list_friend_id, ARRAY[]::bigint[]))
        )
      JOIN public."user" AS friend_user
        ON friend_user.id = l.user_id
@@ -128,12 +126,17 @@ export const getListStatusOfOneUser = (
      LEFT JOIN public."user" ou ON ou.id = op.user_id AND ou.delete_flg = 0
      LEFT JOIN public.user_image oui ON oui.user_id = ou.id AND oui.delete_flg = 0
      WHERE cu.id = $1 AND cu.delete_flg = 0 AND l.delete_flg = 0 AND friend_user.delete_flg = 0
-     ORDER BY l.created_at DESC;
+       AND (
+         $2::timestamptz IS NULL
+         OR (l.created_at, l.id) < ($2::timestamptz, $3::bigint)
+       )
+     ORDER BY l.created_at DESC, l.id DESC
+     LIMIT $4;
    `;
 
    return {
      query,
-     values: [userId],
+     values: [userId, cursor?.createdAt ?? null, cursor?.id ?? null, limit],
    };
  };
 

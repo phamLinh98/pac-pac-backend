@@ -1,13 +1,34 @@
-import * as outboxDAL from "../DAL/outboxDAL.js";
-import { publishMessage } from "./queueClient.js";
+const productionDependencies = async () => {
+  const [outboxDAL, queueClient] = await Promise.all([
+    import("../DAL/outboxDAL.js"),
+    import("./queueClient.js"),
+  ]);
+  return {
+    claim: outboxDAL.claimEvents,
+    publish: queueClient.publishMessage,
+    complete: outboxDAL.markPublished,
+    retry: outboxDAL.releaseForRetry,
+  };
+};
 
-export const publishOutboxBatch = async ({
-  limit = 50,
-  claim = outboxDAL.claimEvents,
-  publish = publishMessage,
-  complete = outboxDAL.markPublished,
-  retry = outboxDAL.releaseForRetry,
-} = {}) => {
+let dependenciesPromise;
+const getProductionDependencies = () => {
+  dependenciesPromise ??= productionDependencies();
+  return dependenciesPromise;
+};
+
+const lazyDependency = (name) => async (...args) => {
+  const dependencies = await getProductionDependencies();
+  return dependencies[name](...args);
+};
+
+export const publishOutboxBatch = async (options = {}) => {
+  const limit = options.limit ?? 50;
+  const claim = options.claim ?? lazyDependency("claim");
+  const publish = options.publish ?? lazyDependency("publish");
+  const complete = options.complete ?? lazyDependency("complete");
+  const retry = options.retry ?? lazyDependency("retry");
+
   const events = await claim(Math.min(Math.max(limit, 1), 100));
   const results = await Promise.allSettled(events.map(async (event) => {
     try {

@@ -31,7 +31,8 @@ export const getList = async (viewerUserId) => {
  * Lấy bài viết theo logic kiểm tra user hiện tại.
  */
 export const getListStatusOfOneUser = async (
-  userId
+  userId,
+  { cursor = null, limit = 10 } = {}
 ) => {
   if (!Number.isInteger(userId) || userId <= 0) {
     throw new TypeError(
@@ -41,10 +42,23 @@ export const getListStatusOfOneUser = async (
 
   const rows =
     await listDAL.getListStatusOfOneUser(
-      userId
+      userId,
+      cursor,
+      limit + 1
     );
 
-  return preparePosts(rows);
+  const hasMore = rows.length > limit;
+  const pageRows = hasMore ? rows.slice(0, limit) : rows;
+  const items = await preparePosts(pageRows);
+  const last = pageRows.at(-1);
+
+  return {
+    items,
+    hasMore,
+    nextCursor: hasMore && last
+      ? Buffer.from(JSON.stringify({ createdAt: last.created_at, id: last.id })).toString("base64url")
+      : null,
+  };
 };
 
 /**
