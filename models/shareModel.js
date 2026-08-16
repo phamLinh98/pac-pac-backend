@@ -23,10 +23,18 @@ export const sharePost = (requestedPostId, userId, shareText) => ({
       SET shared = (SELECT COUNT(*) FROM list shares WHERE shares.original_post_id = list.id AND shares.delete_flg = 0)
       WHERE id IN (SELECT original_post_id FROM created_share) AND delete_flg = 0
       RETURNING id, shared
-    ), new_notification AS (
-      INSERT INTO notification_message (receiver_user_id, sender_user_id, post_id, notification_type)
-      SELECT source.user_id, $2, source.id, 'SHARE' FROM source
-      WHERE source.user_id <> $2 AND EXISTS (SELECT 1 FROM created_share)
+    ), outbox_event AS (
+      INSERT INTO outbox_event (event_type, aggregate_type, aggregate_id, payload)
+      SELECT 'notification.created', 'post_share', created_share.id::text,
+        jsonb_build_object(
+          'receiverUserId', source.user_id,
+          'senderUserId', $2::bigint,
+          'postId', source.id,
+          'sharedPostId', created_share.id,
+          'notificationType', 'SHARE'
+        )
+      FROM source CROSS JOIN created_share
+      WHERE source.user_id <> $2
       RETURNING id
     )
     SELECT created_share.id, created_share.original_post_id,

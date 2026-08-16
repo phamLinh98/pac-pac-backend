@@ -8,7 +8,9 @@ import * as chatController from '../controllers/chatController.js';
 import * as likeController from '../controllers/likeController.js';
 import * as shareController from '../controllers/shareController.js';
 import * as authProxyController from '../controllers/authProxyController.js';
+import * as queueController from '../controllers/queueController.js';
 import { checkTokenMiddleware } from '../middlewares/checkTokenNotValid.js';
+import { checkInternalService } from '../middlewares/checkInternalService.js';
 import {
   uploadPostImagesMiddleware,
   validateUploadedImages,
@@ -16,6 +18,8 @@ import {
 import { loginLimiter, registerLimiter, uploadLimiter } from "../middlewares/security.js";
 
 const router = express.Router();
+
+router.get('/internal/queue/pump', checkInternalService, queueController.pumpNotificationQueue);
 
 router.get('/list', checkTokenMiddleware, listController.getList);
 router.get('/list/:id', checkTokenMiddleware, listController.getListStatusOfOneUser);

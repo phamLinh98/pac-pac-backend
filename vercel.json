@@ -1,6 +1,12 @@
 {
   "version": 2,
   "regions": ["cle1"],
+  "crons": [
+    {
+      "path": "/internal/queue/pump",
+      "schedule": "0 0 * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",

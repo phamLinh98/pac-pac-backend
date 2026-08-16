@@ -1,5 +1,6 @@
 import sql from '../configs/db.js';
 import * as commentModel from '../models/commentModel.js';
+import { scheduleNotificationPipeline } from '../services/notificationPipeline.js';
 
 export const getComment = async() => {
     const queryObject = commentModel.getComment();
@@ -16,6 +17,7 @@ export const getCommentByListId = async (listId, viewerUserId) => {
 export const addComment = async (userId, listId, content, imageKey, parentCommentId, mentionUserIds) => {
     const { query, values } = commentModel.addComment(userId, listId, content, imageKey, parentCommentId, mentionUserIds);
     const [newComment] = await sql(query, values);
+    scheduleNotificationPipeline();
     return newComment;
 }
 
@@ -24,6 +26,10 @@ const one = async (queryObject) => {
     return row;
 };
 
-export const toggleCommentLike = (commentId, userId) => one(commentModel.toggleCommentLike(commentId, userId));
+export const toggleCommentLike = async (commentId, userId) => {
+    const result = await one(commentModel.toggleCommentLike(commentId, userId));
+    scheduleNotificationPipeline();
+    return result;
+};
 export const updateComment = (commentId, userId, content) => one(commentModel.updateComment(commentId, userId, content));
 export const deleteComment = (commentId, userId) => one(commentModel.deleteComment(commentId, userId));

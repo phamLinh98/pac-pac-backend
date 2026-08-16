@@ -58,9 +58,16 @@ export const addComment = (userId, listId, content, imageKey, parentCommentId, m
     ), unique_receivers AS (
       SELECT DISTINCT ON (receiver_id) receiver_id, notification_type
       FROM candidates WHERE receiver_id <> $2 ORDER BY receiver_id, priority
-    ), new_notifications AS (
-      INSERT INTO notification_message (receiver_user_id, sender_user_id, post_id, comment_id, notification_type)
-      SELECT ur.receiver_id, $2, $1, nc.id, ur.notification_type
+    ), outbox_events AS (
+      INSERT INTO outbox_event (event_type, aggregate_type, aggregate_id, payload)
+      SELECT 'notification.created', 'comment', nc.id::text,
+        jsonb_build_object(
+          'receiverUserId', ur.receiver_id,
+          'senderUserId', $2::bigint,
+          'postId', $1::bigint,
+          'commentId', nc.id,
+          'notificationType', ur.notification_type
+        )
       FROM unique_receivers ur CROSS JOIN new_comment nc
     )
     SELECT * FROM new_comment
@@ -84,9 +91,16 @@ export const toggleCommentLike = (commentId, userId) => ({
       UPDATE notification_message SET delete_flg = 1
       WHERE comment_id = $1 AND sender_user_id = $2 AND notification_type = 'COMMENT_LIKE'
         AND delete_flg = 0 AND EXISTS (SELECT 1 FROM removed)
-    ), new_notification AS (
-      INSERT INTO notification_message (receiver_user_id, sender_user_id, post_id, comment_id, notification_type)
-      SELECT t.user_id, $2, t.list_id, t.id, 'COMMENT_LIKE'
+    ), outbox_event AS (
+      INSERT INTO outbox_event (event_type, aggregate_type, aggregate_id, payload)
+      SELECT 'notification.created', 'comment_like', t.id::text,
+        jsonb_build_object(
+          'receiverUserId', t.user_id,
+          'senderUserId', $2::bigint,
+          'postId', t.list_id,
+          'commentId', t.id,
+          'notificationType', 'COMMENT_LIKE'
+        )
       FROM target t WHERE t.user_id <> $2 AND EXISTS (SELECT 1 FROM inserted)
     )
     SELECT EXISTS(SELECT 1 FROM inserted) AS is_liked,

@@ -16,11 +16,15 @@ export const togglePostLike = (postId, userId) => ({
       WHERE post_id = $1 AND sender_user_id = $2 AND notification_type = 'LIKE'
         AND delete_flg = 0 AND EXISTS (SELECT 1 FROM deleted)
       RETURNING id
-    ), new_notification AS (
-      INSERT INTO notification_message (
-        receiver_user_id, sender_user_id, post_id, notification_type
-      )
-      SELECT l.user_id, $2, l.id, 'LIKE'
+    ), outbox_event AS (
+      INSERT INTO outbox_event (event_type, aggregate_type, aggregate_id, payload)
+      SELECT 'notification.created', 'post_like', l.id::text,
+        jsonb_build_object(
+          'receiverUserId', l.user_id,
+          'senderUserId', $2::bigint,
+          'postId', l.id,
+          'notificationType', 'LIKE'
+        )
       FROM list l
       WHERE l.id = $1 AND l.user_id <> $2 AND l.delete_flg = 0
         AND EXISTS (SELECT 1 FROM inserted)
