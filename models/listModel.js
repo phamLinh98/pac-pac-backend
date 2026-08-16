@@ -97,18 +97,18 @@ export const getListStatusOfOneUser = (
  */
  export const getListStatusAllUserViaId = (userId, cursor, limit) => {
    const query = `
-     WITH current_user AS (
+     WITH logged_in_user AS (
        SELECT id, list_friend_id
        FROM public."user"
        WHERE id = $1 AND delete_flg = 0
      ), feed_user_ids AS (
        SELECT id AS user_id
-       FROM current_user
+       FROM logged_in_user
 
        UNION
 
        SELECT legacy_friend.friend_id
-       FROM current_user
+       FROM logged_in_user
        CROSS JOIN LATERAL UNNEST(
          COALESCE(list_friend_id, ARRAY[]::bigint[])
        ) AS legacy_friend(friend_id)
@@ -116,13 +116,13 @@ export const getListStatusOfOneUser = (
        UNION
 
        SELECT CASE
-         WHEN friend_request.sender_id = current_user.id
+         WHEN friend_request.sender_id = logged_in_user.id
            THEN friend_request.receiver_id
          ELSE friend_request.sender_id
        END AS user_id
        FROM public.friend_requests AS friend_request
-       JOIN current_user
-         ON current_user.id IN (
+       JOIN logged_in_user
+         ON logged_in_user.id IN (
            friend_request.sender_id,
            friend_request.receiver_id
          )

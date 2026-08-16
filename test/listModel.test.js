@@ -11,7 +11,8 @@ test("home feed includes login user, accepted friends and legacy friends", () =>
 
   const { query, values } = getListStatusAllUserViaId(7, cursor, 11);
 
-  assert.match(query, /SELECT id AS user_id\s+FROM current_user/);
+  assert.match(query, /SELECT id AS user_id\s+FROM logged_in_user/);
+  assert.doesNotMatch(query, /WITH\s+current_user\s+AS/i);
   assert.match(query, /UNNEST\([\s\S]*list_friend_id/);
   assert.match(query, /friend_request\.status = 'accepted'/);
   assert.match(query, /friend_request\.delete_flg = 0/);
