@@ -90,11 +90,45 @@ export const getListStatusOfOneUser = (
 };
 
 /**
- * Lấy bài viết của những user nằm trong list_friend_id
- * của user đang đăng nhập.
+ * Lấy bài viết của user đang đăng nhập và bạn bè đã được chấp nhận.
+ *
+ * friend_requests là nguồn quan hệ chính. list_friend_id chỉ được giữ lại
+ * để tương thích với dữ liệu cũ trong thời gian chuyển đổi.
  */
  export const getListStatusAllUserViaId = (userId, cursor, limit) => {
    const query = `
+     WITH current_user AS (
+       SELECT id, list_friend_id
+       FROM public."user"
+       WHERE id = $1 AND delete_flg = 0
+     ), feed_user_ids AS (
+       SELECT id AS user_id
+       FROM current_user
+
+       UNION
+
+       SELECT legacy_friend.friend_id
+       FROM current_user
+       CROSS JOIN LATERAL UNNEST(
+         COALESCE(list_friend_id, ARRAY[]::bigint[])
+       ) AS legacy_friend(friend_id)
+
+       UNION
+
+       SELECT CASE
+         WHEN friend_request.sender_id = current_user.id
+           THEN friend_request.receiver_id
+         ELSE friend_request.sender_id
+       END AS user_id
+       FROM public.friend_requests AS friend_request
+       JOIN current_user
+         ON current_user.id IN (
+           friend_request.sender_id,
+           friend_request.receiver_id
+         )
+       WHERE friend_request.status = 'accepted'
+         AND friend_request.delete_flg = 0
+     )
      SELECT
        l.*,
        (l.share_snapshot IS NOT NULL) AS is_shared_post,
@@ -113,19 +147,16 @@ export const getListStatusOfOneUser = (
        friend_image.avatar,
        friend_image.background,
        friend_user.list_friend_id
-     FROM public."user" AS cu
+     FROM feed_user_ids
      JOIN list AS l
-       ON (
-         l.user_id = cu.id
-         OR l.user_id = ANY(COALESCE(cu.list_friend_id, ARRAY[]::bigint[]))
-       )
+       ON l.user_id = feed_user_ids.user_id
      JOIN public."user" AS friend_user
        ON friend_user.id = l.user_id
      LEFT JOIN public.user_image friend_image ON friend_image.user_id = friend_user.id AND friend_image.delete_flg = 0
      LEFT JOIN list op ON op.id = l.original_post_id AND op.delete_flg = 0
      LEFT JOIN public."user" ou ON ou.id = op.user_id AND ou.delete_flg = 0
      LEFT JOIN public.user_image oui ON oui.user_id = ou.id AND oui.delete_flg = 0
-     WHERE cu.id = $1 AND cu.delete_flg = 0 AND l.delete_flg = 0 AND friend_user.delete_flg = 0
+     WHERE l.delete_flg = 0 AND friend_user.delete_flg = 0
        AND (
          $2::timestamptz IS NULL
          OR (l.created_at, l.id) < ($2::timestamptz, $3::bigint)
