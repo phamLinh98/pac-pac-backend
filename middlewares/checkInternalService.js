@@ -9,7 +9,9 @@ const safeEqual = (left, right) => {
 export const checkInternalService = (req, res, next) => {
   const bearer = req.get("authorization")?.replace(/^Bearer\s+/i, "") || "";
   const supplied = req.get("x-service-api-key") || bearer;
-  const expected = process.env.INTERNAL_SERVICE_API_KEY || process.env.CRON_SECRET || "";
-  if (!expected || !safeEqual(supplied, expected)) return res.status(401).json({ message: "Unauthorized service" });
+  const expectedSecrets = [process.env.INTERNAL_SERVICE_API_KEY, process.env.CRON_SECRET].filter(Boolean);
+  if (!expectedSecrets.some((secret) => safeEqual(supplied, secret))) {
+    return res.status(401).json({ message: "Unauthorized service" });
+  }
   return next();
 };
